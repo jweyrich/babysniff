@@ -60,9 +60,8 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	// TODO(jweyrich): uncomment :)
-	//if (!args->foreground)
-	//	daemonize(args);
+	if (!args.foreground)
+		daemonize(&args);
 
 	install_sighandlers();
 
