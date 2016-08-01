@@ -13,5 +13,3 @@
 #define LOG_TCP_DATA		0
 #define LOG_UDP				0
 #define LOG_UDP_DATA		0
-
-#define CONFIG_DEFAULT_PORT	1053

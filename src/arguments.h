@@ -12,7 +12,6 @@ typedef struct cli_args {
 	char *interface_name;
 	char *chrootdir;
 	char *username;
-	uint16_t port;
 } cli_args_t;
 
 void daemonize(const cli_args_t *args);

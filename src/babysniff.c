@@ -6,7 +6,6 @@
 #include <signal.h>
 #include <unistd.h>
 #include "arguments.h"
-#include "listener.h"
 #include "security.h"
 
 // #ifndef _GNU_SOURCE
@@ -26,8 +25,7 @@
 // sig_atomic_t is defined by C99
 static volatile sig_atomic_t g_done = 0; 
 
-static void cleanup(int signal)
-{
+static void cleanup(int signal) {
 	printf("Received signal %d\n", signal);
 	if (signal == SIGINT)
 		g_done = 1;
