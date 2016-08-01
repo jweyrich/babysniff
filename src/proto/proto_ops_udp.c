@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <netinet/udp.h>
 #include "macros.h"
+#include "dump.h"
 
 #define UDP_HDR_LEN 8
 
