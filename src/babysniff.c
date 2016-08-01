@@ -46,7 +46,6 @@ static void install_sighandlers(void) {
 
 int main(int argc, char **argv) {
 	cli_args_t args;
-	channel_t *channel;
 
 	if (parse_arguments(&args, argc, argv) < 0)
 		return EXIT_FAILURE;
@@ -55,7 +54,12 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Requires superuser privileges\n");
 		return EXIT_FAILURE;
 	}
-	
+
+	if (args.interface_name == NULL || args.interface_name[0] == '\0') {
+		fprintf(stderr, "Missing interface name argument: --interface=foo\n");
+		return EXIT_FAILURE;
+	}
+
 	// TODO(jweyrich): uncomment :)
 	//if (!args->foreground)
 	//	daemonize(args);
@@ -71,9 +75,7 @@ int main(int argc, char **argv) {
 		close(nullfd);
 	}
 
-	//int sock_udp = listener_udp_create(&args);
-	//evutil_make_socket_nonblocking(sock_udp);
-	channel = sniff_open("en1", 0, 0);
+	channel_t *channel = sniff_open(args.interface_name, 0, 0);
 	if (channel == NULL)
 		return EXIT_FAILURE;
 	if (sniff_setnonblock(channel, 1) < 0)

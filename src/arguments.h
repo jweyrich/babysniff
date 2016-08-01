@@ -9,6 +9,7 @@ typedef struct cli_args {
 	const char *exename;
 	int debuglevel;
 	bool foreground;
+	char *interface_name;
 	char *chrootdir;
 	char *username;
 	uint16_t port;

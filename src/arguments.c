@@ -14,15 +14,16 @@ void usage(const cli_args_t *args) {
 #define UNDER(text)	"\033[4m" text "\033[0m"
 	fprintf(stderr,
 		"Usage: %s [OPTIONS]\n"
-		"  -#, --debug=#               Set the daemon's debug level.\n"
+		"  -d #, --debug=#             Set the daemon's debug level.\n"
 		"                              Debugging is more verbose with a higher debug level.\n"
 		"  -f, --foreground            Run the server in the foreground (do not daemonize).\n"
-		"  -h, --help                  Display this help and exit.\n"
+		"  -i, --interface             Specify which interface to inspect.\n"
 		"  -p, --port=#                Port number to use for accepting connections (default is %d).\n"
 		"  -t, --chrootdir="UNDER("directory")"   Chroot to "UNDER("directory")" after processing the command line arguments.\n"
 		"  -u, --user="UNDER("name")"             Change the user to "UNDER("name")" after completing privileged operations, \n"
 		"                              such as creating sockets that listen on privileged ports.\n"
-		"  -v, --version               Output version information and exit.\n",
+		"  -v, --version               Output version information and exit.\n"
+		"  -h, --help                  Display this help and exit.\n",
 		args->exename, CONFIG_DEFAULT_PORT
 	);
 #undef UNDER
@@ -45,6 +46,7 @@ void daemonize(const cli_args_t *args) {
 	}
 }
 
+// NOTE: Not thread-safe/reentrant!
 const char *get_opt_string(const struct option *options) {
 	static char buffer[128];
 	register int i;
@@ -69,11 +71,12 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 	static const struct option options[] = {
 		{ "debug",		required_argument,	NULL, 'd' },
 		{ "foreground",	no_argument,		NULL, 'f' },
-		{ "help",		no_argument,		NULL, 'h' },
+		{ "interface",  required_argument,  NULL, 'i' },
 		{ "port",		required_argument,	NULL, 'p' },
 		{ "chrootdir",	required_argument,	NULL, 't' },
 		{ "username",	required_argument,	NULL, 'u' },
 		{ "version",	no_argument,		NULL, 'v' },
+		{ "help",		no_argument,		NULL, 'h' },
 		{ NULL, no_argument, NULL, 0 }
 	};
 	memset(args, 0, sizeof(struct cli_args));
@@ -92,8 +95,7 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 		switch (opt) {
 			case 'd': args->debuglevel = atoi(optarg); break;
 			case 'f': args->foreground = true; break;
-			case 'h': usage(args); exit(EXIT_SUCCESS);
-			case '?': usage(args); exit(EXIT_FAILURE);
+			case 'i': args->interface_name = optarg; break;
 			case 'p': {
 				unsigned long ul = strtoul(optarg, NULL, 0);
 				if (ul == 0 || ul > USHRT_MAX) {
@@ -106,6 +108,8 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 			case 't': args->chrootdir = optarg; break;
 			case 'u': args->username = optarg; break;
 			case 'v': showversion(); exit(EXIT_SUCCESS);
+			case 'h': usage(args); exit(EXIT_SUCCESS);
+			case '?': usage(args); exit(EXIT_FAILURE);
 		}
 	}
 	return 0;
