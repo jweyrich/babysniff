@@ -7,8 +7,6 @@ const char *sniff_strerror(int errcode) {
 #if defined(HAVE_STRERROR) || defined(_LIBC)
 	return strerror(errcode);
 #else
-	extern const char * const sys_errlist[];
-	extern const int sys_nerr;
 	static char buffer[64];
 	if (errcode < sys_nerr)
 		return sys_errlist[errcode];

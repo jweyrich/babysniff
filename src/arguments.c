@@ -1,7 +1,5 @@
 #include "arguments.h"
-#include <errno.h>
 #include <getopt.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,18 +29,6 @@ void usage(const cli_args_t *args) {
 
 void showversion() {
 	fprintf(stdout, "%s %s - %s\n", PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
-}
-
-void daemonize(const cli_args_t *args) {
-	pid_t pid = fork();
-	if (pid == 0) {
-		fprintf(stderr, "%s detached with pid %u\n", args->exename, getpid());
-	} else if (pid < 0) {
-		fprintf(stderr, "Fork failed: %s\n", strerror(errno));
-		exit(EXIT_FAILURE);
-	} else {
-		exit(EXIT_SUCCESS);
-	}
 }
 
 // NOTE: Not thread-safe/reentrant!

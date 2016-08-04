@@ -14,5 +14,4 @@ typedef struct cli_args {
 	char *username;
 } cli_args_t;
 
-void daemonize(const cli_args_t *args);
 int parse_arguments(cli_args_t *args, int argc, char **argv);

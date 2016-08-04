@@ -3,6 +3,8 @@
 #include <arpa/inet.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
+#include "config.h"
+#include "log.h"
 
 int sniff_icmp_fromwire(const byte *packet, size_t length) {
 	const struct icmp *header = (struct icmp *)packet;

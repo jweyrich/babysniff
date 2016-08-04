@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <net/if.h>
 #include <net/bpf.h>
+#include "log.h"
 #include "macros.h"
 
 // TODO(jweyrich): parse options

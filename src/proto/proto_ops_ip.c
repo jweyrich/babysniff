@@ -4,6 +4,8 @@
 #include <netdb.h>
 #include <net/ethernet.h>
 #include <netinet/ip.h>
+#include "config.h"
+#include "log.h"
 #include "macros.h"
 
 // TODO(jweyrich): parse options

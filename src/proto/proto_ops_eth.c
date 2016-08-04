@@ -1,6 +1,8 @@
 #include "proto_ops.h"
 #include <stdio.h>
 #include <net/ethernet.h>
+#include "config.h"
+#include "log.h"
 #include "macros.h"
 
 // TODO(jweyrich): linux uses struct ethhdr

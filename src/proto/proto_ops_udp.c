@@ -1,8 +1,10 @@
 #include "proto_ops.h"
 #include <stdio.h>
 #include <netinet/udp.h>
-#include "macros.h"
+#include "config.h"
 #include "dump.h"
+#include "log.h"
+#include "macros.h"
 
 #define UDP_HDR_LEN 8
 

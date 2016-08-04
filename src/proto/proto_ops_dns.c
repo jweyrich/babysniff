@@ -8,7 +8,9 @@
 #include "proto/dns/dns.h"
 #include "base64.h"
 #include "alloc.h"
+#include "config.h"
 #include "dump.h"
+#include "log.h"
 #include "types/buffer.h"
 #include "types/pair.h"
 

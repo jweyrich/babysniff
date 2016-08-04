@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include "arguments.h"
+#include "daemon.h"
 #include "security.h"
 
 // #ifndef _GNU_SOURCE

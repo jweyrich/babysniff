@@ -4,7 +4,9 @@
 #include <netinet/tcp.h>
 #include "macros.h"
 #include "types/buffer.h"
+#include "config.h"
 #include "dump.h"
+#include "log.h"
 
 static const char *flags_totext(byte value) {
 	static char text[8 * 4]; // # of flags * length with separator
