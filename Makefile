@@ -5,8 +5,6 @@
 PLATFORM_OS := $(shell uname)
 PREFIX = /usr
 DEST = $(DESTDIR)/$(PREFIX)/bin
-CC = clang
-CXX = clang++
 LINK = $(CXX)
 AR = ar cq
 RANLIB = ranlib -s
