@@ -1,6 +1,10 @@
 #include "proto_ops.h"
 #include <stdio.h>
 #include <arpa/inet.h>
+#include "system.h"
+#ifdef OS_LINUX
+#	include <netinet/ether.h> // for `ether_ntoa`
+#endif
 #include <netinet/if_ether.h>
 #include "config.h"
 #include "log.h"
@@ -16,10 +20,18 @@ typedef enum {
 
 static pair_t arp_array_hrd_data[] = {
 	{ ARPHRD_ETHER,				"Ethernet" },
+#ifdef ARPHRD_IEEE802
 	{ ARPHRD_IEEE802,			"IEEE802" },
+#endif
+#ifdef ARPHRD_FRELAY
 	{ ARPHRD_FRELAY,			"FRELAY" },
+#endif
+#ifdef ARPHRD_IEEE1394
 	{ ARPHRD_IEEE1394,			"IEEE1394" },
+#endif
+#ifdef ARPHRD_IEEE1394_EUI64
 	{ ARPHRD_IEEE1394_EUI64,	"IEEE1394EUI64" },
+#endif
 	{ 0,						"Unknown" },
 };
 
@@ -45,14 +57,23 @@ static const pair_array_t arp_array_pro = {
 	.data = arp_array_pro_data
 };
 
+#ifndef OS_LINUX
+#	define ARPOP_RREQUEST	ARPOP_REVREQUEST
+#	define ARPOP_RREPLY		ARPOP_REVREPLY
+#	define ARPOP_InREQUEST	ARPOP_INVREQUEST
+#	define ARPOP_InREPLY	ARPOP_INVREPLY
+#	define ARPOP_NAK		10
+#endif
+
 static pair_t arp_array_op_data[] = {
-	{ ARPOP_REQUEST,	"Request" }, // request to resolve address
-	{ ARPOP_REPLY,		"Reply" }, // response to previous request
-	{ ARPOP_REVREQUEST,	"RRequest" }, // request protocol address given hardware
-	{ ARPOP_REVREPLY,	"RReply" }, // response giving protocol address
-	{ ARPOP_INVREQUEST,	"IRequest" }, // request to identify peer
-	{ ARPOP_INVREPLY,	"IReply" }, // response identifying peer
-	{ 0,				"Unknown" },
+	{ ARPOP_REQUEST,	"Request"  }, // request to resolve address
+	{ ARPOP_REPLY,		"Reply"    }, // response to previous request
+	{ ARPOP_RREQUEST,	"RRequest" }, // request protocol address given hardware
+	{ ARPOP_RREPLY,		"RReply"   }, // response giving protocol address
+	{ ARPOP_InREQUEST,	"IRequest" }, // request to identify peer
+	{ ARPOP_InREPLY,	"IReply"   }, // response identifying peer
+	{ ARPOP_NAK,		"NAK"      }, // (ATM)ARP NAK.
+	{ 0,				"Unknown"  },
 };
 
 static const pair_array_t arp_array_op = {

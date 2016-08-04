@@ -1,12 +1,14 @@
 #include "proto_ops.h"
 #include <stdio.h>
 #include <string.h>
+#include <arpa/inet.h>
 #include <netinet/tcp.h>
 #include "macros.h"
 #include "types/buffer.h"
 #include "config.h"
 #include "dump.h"
 #include "log.h"
+#include "system.h"
 
 static const char *flags_totext(byte value) {
 	static char text[8 * 4]; // # of flags * length with separator
@@ -24,8 +26,10 @@ static const char *flags_totext(byte value) {
 	FLAGS_IF(TH_PUSH, psh)
 	FLAGS_IF(TH_ACK, ack)
 	FLAGS_IF(TH_URG, urg)
+#ifdef OS_BSD_BASED
 	FLAGS_IF(TH_ECE, ece)
 	FLAGS_IF(TH_CWR, cwr)
+#endif
 #undef FLAGS_IF
 	return text;
 }

@@ -1,5 +1,6 @@
 #include "proto_ops.h"
 #include <stdio.h>
+#include <arpa/inet.h>
 #include <netinet/udp.h>
 #include "config.h"
 #include "dump.h"

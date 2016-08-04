@@ -1,6 +1,11 @@
 #include "proto_ops.h"
 #include <stdio.h>
+#include <arpa/inet.h>
 #include <net/ethernet.h>
+#include "system.h"
+#ifdef OS_LINUX
+#	include <netinet/ether.h> // for `ether_ntoa`
+#endif
 #include "config.h"
 #include "log.h"
 #include "macros.h"

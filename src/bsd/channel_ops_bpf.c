@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <net/if.h>
 #include <net/bpf.h>
+#include <time.h>
 #include "log.h"
 #include "macros.h"
 
@@ -68,7 +69,7 @@ static int bpf_set_immediate(channel_t *channel, int on) {
 	return 0;
 }
 
-static int bpf_set_promisc(channel_t *channel, int on) {
+static int bpf_set_promisc(channel_t *channel, const char *ifname, int on) {
 	int value = on == 0 ? 0 : 1;
 	if (ioctl(channel->fd, BIOCPROMISC, &value) < 0) {
 		sniff_channel_set_error_msg(channel, "ioctl(BIOCPROMISC): %s", sniff_strerror(errno));
@@ -148,7 +149,7 @@ channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
 		goto error;
 
 	// Keep going if it fails
-	bpf_set_promisc(channel, promisc);
+	bpf_set_promisc(channel, ifname, promisc);
 
 	return channel;
 

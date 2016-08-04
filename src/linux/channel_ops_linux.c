@@ -6,6 +6,7 @@
 #include <string.h>
 //#include <netdb.h>
 #include <fcntl.h>
+#include <arpa/inet.h>
 //#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -16,7 +17,6 @@
 //#include <netinet/in_systm.h>
 //#include <netinet/if_ether.h>
 //#include <arpa/inet.h>
-#include <unistd.h>
 //#include <net/ethernet.h>
 //#include <netinet/in_systm.h>
 //#include <netinet/in.h>
@@ -24,12 +24,15 @@
 //#include <netinet/tcp.h>
 //#include <netinet/udp.h>
 //#include <netinet/ip_icmp.h>
+#include <time.h>
+#include <unistd.h>
+#include "types.h"
 
 static int linux_ensure_version(channel_t *channel) {
 	return 0;
 }
 
-static int linux_set_interface(channel_t *channel, const char *ifname, uint16 protocol) {
+static int linux_set_interface(channel_t *channel, const char *ifname, uint16_t protocol) {
 	struct sockaddr_ll sll;
 	struct ifreq ifr;
 
@@ -64,7 +67,7 @@ static int linux_set_immediate(channel_t *channel, int on) {
 	return 0;
 }
 
-static int linux_set_promisc(channel_t *channel, int on) {
+static int linux_set_promisc(channel_t *channel, const char *ifname, int on) {
 	int value = on == 0 ? 0 : 1;
 	struct ifreq ifr;
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
@@ -110,7 +113,7 @@ static int linux_set_buffersize(channel_t *channel, size_t size) {
 }
 
 channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
-	uint16 protocol = htons(ETH_P_ALL); // ETH_P_IP
+	uint16_t protocol = htons(ETH_P_ALL); // ETH_P_IP
 	channel_t *channel;
 
 	channel = sniff_alloc_channel();
@@ -118,7 +121,7 @@ channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
 		return NULL;
 
 	channel->fd = socket(PF_PACKET, SOCK_RAW, protocol);
-	if (channel-fd == -1) {
+	if (channel->fd == -1) {
 		//snprintf(ctx->errmsg, SNIFF_ERR_BUFSIZE, "socket(SOCK_RAW): %s",
 		//	sniff_strerror(errno));
 		goto error;
@@ -137,7 +140,7 @@ channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
 		goto error;
 
 	// Keep going if it fails
-	linux_set_promisc(channel, promisc);
+	linux_set_promisc(channel, ifname, promisc);
 
 	return channel;
 
