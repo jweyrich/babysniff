@@ -26,6 +26,7 @@
 //#include <netinet/ip_icmp.h>
 #include <time.h>
 #include <unistd.h>
+#include "log.h"
 #include "types.h"
 
 static int linux_ensure_version(channel_t *channel) {
@@ -113,7 +114,7 @@ static int linux_set_buffersize(channel_t *channel, size_t size) {
 }
 
 channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
-	uint16_t protocol = htons(ETH_P_ALL); // ETH_P_IP
+	const uint16_t protocol = htons(ETH_P_ALL); // ETH_P_IP
 	channel_t *channel;
 
 	channel = sniff_alloc_channel();
@@ -122,7 +123,7 @@ channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
 
 	channel->fd = socket(PF_PACKET, SOCK_RAW, protocol);
 	if (channel->fd == -1) {
-		//snprintf(ctx->errmsg, SNIFF_ERR_BUFSIZE, "socket(SOCK_RAW): %s",
+		//snprintf(channel->errmsg, SNIFF_ERR_BUFSIZE, "socket(SOCK_RAW): %s",
 		//	sniff_strerror(errno));
 		goto error;
 	}
@@ -145,6 +146,7 @@ channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
 	return channel;
 
 error:
+	LOG_ERROR("%s", channel->errmsg);
 	sniff_free_channel(channel);
 	return NULL;
 }
@@ -155,8 +157,9 @@ void sniff_close(channel_t *channel) {
 
 int sniff_readloop(channel_t *channel, long timeout) {
 	byte *begin, *end, *current;
-	struct sockaddr_ll packet_info;
+	struct sockaddr packet_info;
 	size_t packet_info_size = sizeof(struct sockaddr_ll);
+	//struct eth_hdr *header;
 	ssize_t bytes_read;
 	time_t time_start, time_elapsed;
 
@@ -164,7 +167,7 @@ int sniff_readloop(channel_t *channel, long timeout) {
 
 	while (1) {
 		bytes_read = recvfrom(channel->fd, channel->buffer, channel->buffer_size, 0,
-			(struct sockaddr *)&packet_info, &packet_info_size);
+			&packet_info, (socklen_t *)&packet_info_size);
 		//bytes_read = read(channel->fd, channel->buffer, channel->buffer_size);
 		if (bytes_read < 0) {
 			if (errno != EAGAIN)
@@ -175,12 +178,12 @@ int sniff_readloop(channel_t *channel, long timeout) {
 			end = channel->buffer + bytes_read;
 
 			// loop through each snapshot in the chunk
-//			while (begin < end) {
-//				header = (struct linux_hdr *)begin;
-//				current = begin + header->bh_hdrlen;
-//				sniff_parse_packet(current, header->bh_caplen, 0);
-//				begin += BPF_WORDALIGN(header->bh_caplen + header->bh_hdrlen);
-//			}
+			while (begin < end) {
+				//header = (struct eth_hdr *)begin;
+				current = begin; // Point to the start of the received buffer because it's not encapsulated.
+				sniff_packet_fromwire(current, bytes_read, 0);
+				begin += bytes_read;
+			}
 		}
 		time_elapsed = time(NULL) - time_start;
 		if (time_elapsed >= timeout) {
