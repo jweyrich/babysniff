@@ -154,10 +154,10 @@ void sniff_close(channel_t *channel) {
 }
 
 int sniff_readloop(channel_t *channel, long timeout) {
-	register byte *begin, *end, *current;
+	byte *begin, *end, *current;
 	struct sockaddr_ll packet_info;
 	size_t packet_info_size = sizeof(struct sockaddr_ll);
-	register ssize_t bytes_read;
+	ssize_t bytes_read;
 	time_t time_start, time_elapsed;
 
 	time_start = time(NULL);

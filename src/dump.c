@@ -10,7 +10,7 @@ void print_bits(FILE *stream, uint64_t value, size_t size) {
 
 void dump_hex(FILE *stream, const byte *data, size_t size, uint32_t offset) {
     int ch;
-    register uint32_t i, j, cols;
+    uint32_t i, j, cols;
 
     for (i = 0; i < size; i += 16) {
         fprintf(stream, "%04x: ", i + offset);

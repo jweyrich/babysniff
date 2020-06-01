@@ -706,7 +706,7 @@ int sniff_dns_fromwire(const byte *packet, size_t length) {
 	int result = 0;
 	buffer_t buffer = BUFFER_INITIALIZER;
 	dns_hdr_t *header;
-	register int i;
+	int i;
 
 	buffer_set_data(&buffer, (byte *)packet, length);
 

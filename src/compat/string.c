@@ -5,7 +5,7 @@
 
 #ifndef strnlen
 size_t strnlen(const char *s, size_t maxlen) {
-	register const char *p;
+	const char *p;
 	for (p = s; *p && maxlen--; ++p);
 	return p - s;
 }

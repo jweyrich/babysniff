@@ -34,7 +34,7 @@ void showversion() {
 // NOTE: Not thread-safe/reentrant!
 const char *get_opt_string(const struct option *options) {
 	static char buffer[128];
-	register int i;
+	int i;
 	char *ptr = buffer;
 	memset(buffer, 0, sizeof(buffer));
 	for (i=0; options[i].name != NULL; ++i) {
