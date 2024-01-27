@@ -1,5 +1,5 @@
 #include "types/buffer.h"
-#include "compat/string.h"
+#include "compat/string_compat.h"
 #include "log.h"
 #include <stdarg.h>
 #include <stdio.h>
