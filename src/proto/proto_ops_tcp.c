@@ -42,14 +42,16 @@ static const char *flags_totext(byte value) {
 int sniff_tcp_fromwire(const byte *packet, size_t length) {
 	const struct tcphdr *header = (struct tcphdr *)packet;
 	uint16_t header_len = header->th_off * 4;
-	uint16_t sport = ntohs(header->th_sport);
-	uint16_t dport = ntohs(header->th_dport);
 
 	LOG_PRINTF(TCP, "-- TCP (%lu bytes)\n", length);
 	if (length < header_len) {
 		LOG_PRINTF_INDENT(IP, 2, "\tinvalid packet\n");
 		return -1;
 	}
+
+	uint16_t sport = ntohs(header->th_sport);
+	uint16_t dport = ntohs(header->th_dport);
+
 	LOG_PRINTF_INDENT(TCP, 2, "\tsport: %u\n", sport); // source port
 	LOG_PRINTF_INDENT(TCP, 2, "\tdport: %u\n", dport); // destination port
 	LOG_PRINTF_INDENT(TCP, 2, "\tseq  : %u\n", ntohl(header->th_seq)); // sequence number
