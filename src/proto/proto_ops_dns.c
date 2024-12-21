@@ -733,8 +733,14 @@ int sniff_dns_fromwire(const byte *packet, size_t length, const config_t *config
 	}
 
 	header = parse_header(&buffer);
-	if (header == NULL) { result = -1; }
-	else { print_header(header); }
+	if (header == NULL) {
+		result = -1;
+	}
+	else {
+		if (config->filters_flag.dns) {
+			print_header(header);
+		}
+	}
 
 	if (config->filters_flag.dns) {
 		LOG_PRINTF_INDENT(2, "QUESTION SECTION:\n");
