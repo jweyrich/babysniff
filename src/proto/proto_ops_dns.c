@@ -265,10 +265,10 @@ static size_t predict_name_length(buffer_t *buffer) {
 	size_t orig_pos, label_len, total_len = 0;
 
 	orig_pos = buffer_tell(buffer);
-	//LOG("starting at %#x", orig_pos);
+	// LOG_DEBUG("starting at %#x", orig_pos);
 	for (;;) {
 		label_len = buffer_read_uint8(buffer);
-		//LOG("label_len = %zd", label_len);
+		// LOG_DEBUG("label_len = %zd", label_len);
 		if (buffer_has_error(buffer))
 			goto error;
 		if (label_len == 0) // null label?
@@ -276,7 +276,7 @@ static size_t predict_name_length(buffer_t *buffer) {
 		if (label_len & DNS_LABEL_COMPRESS_MASK) { // compressed label?
 			// get the new offset
 			uint32_t new_off = buffer_read_uint8(buffer);
-			//LOG("new offset is %#zx", new_off);
+			// LOG_DEBUG("new offset is %#zx", new_off);
 			if (buffer_has_error(buffer))
 				goto error;
 			buffer_seek(buffer, new_off);
@@ -289,7 +289,7 @@ static size_t predict_name_length(buffer_t *buffer) {
 		total_len += label_len;
 		if (total_len > DNS_NAME_MAXLEN) // overflow?
 			goto error;
-		//LOG("skiping from %#x", buffer_tell(buffer));
+		// LOG_DEBUG("skiping from %#x", buffer_tell(buffer));
 		buffer_skip(buffer, label_len);
 		if (buffer_has_error(buffer))
 			goto error;
@@ -298,7 +298,7 @@ static size_t predict_name_length(buffer_t *buffer) {
 	}
 	// move back to original position
 	buffer_seek(buffer, orig_pos);
-	//LOG("jumped back to %#zx", orig_pos);
+	// LOG_DEBUG("jumped back to %#zx", orig_pos);
 	if (label_count > 0)
 		return total_len;
 error:
@@ -310,31 +310,33 @@ static char *parse_name(buffer_t *buffer) {
 	int label_count = 0;
 	int compressed = 0;
 	size_t total_len = 0, orig_pos = 0, label_len;
-	char *name;
 
-	//LOG("starting at %#x", buffer_tell(buffer));
-	name = malloc(DNS_NAME_MAXLEN+1);
+	char *name = malloc(DNS_NAME_MAXLEN+1);
 	if (name == NULL)
 		return NULL;
+
 	for (;;) {
 		label_len = buffer_read_uint8(buffer);
-		//LOG("label_len is %zd", label_len);
+		// LOG_DEBUG("label_len is %zd", label_len);
 		if (buffer_has_error(buffer))
 			goto error;
-		if (label_len == 0) // null label?
+		if (label_len == 0) { // null label?
+			// A null label indicates the end of the name.
+			// LOG_DEBUG("null label");
 			break;
+		}
 		if (label_len & DNS_LABEL_COMPRESS_MASK) { // compressed label?
 			uint32_t new_off;
 			compressed++;
 			// get the new offset
 			new_off = buffer_read_uint8(buffer);
-			//LOG("new_off is %#zx", new_off);
+			// LOG_DEBUG("new_off is %#zx", new_off);
 			if (buffer_has_error(buffer))
 				goto error;
 			// keep the original position
 			if (compressed == 1) {
 				orig_pos = buffer_tell(buffer);
-				//LOG("orig_pos is %#zx", orig_pos);
+				// LOG_DEBUG("orig_pos is %#zx", orig_pos);
 			}
 			// move to new offset
 			buffer_seek(buffer, new_off);
@@ -350,7 +352,7 @@ static char *parse_name(buffer_t *buffer) {
 			LOG_WARN("DNS name size is invalid (exceeded max name size)");
 			goto error;
 		}
-		//LOG("copying from %#x", buffer_tell(buffer));
+		// LOG_DEBUG("copying from %#x", buffer_tell(buffer));
 		buffer_strncpy(buffer, name + total_len - label_len, label_len);
 		if (buffer_has_error(buffer))
 			goto error;
@@ -361,13 +363,14 @@ static char *parse_name(buffer_t *buffer) {
 	if (compressed != 0) {
 		// move back to original position
 		buffer_seek(buffer, orig_pos);
-		//LOG("jumped back to %#zx", orig_pos);
+		// LOG_DEBUG("jumped back to %#zx", orig_pos);
 	}
 	if (label_count > 0) {
 		name[total_len - 1] = 0;
 		return name;
 	} else {
-		LOG_WARN("DNS name has no labels");
+		// LOG_WARN("DNS name has no labels");
+		return NULL;
 	}
 error:
 	LOG_WARN("DNS name is invalid");
@@ -607,60 +610,83 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 	memset(rr, 0, sizeof(dns_rr_t));
 	{
 		rr->name = parse_name(buffer);
-		if (rr->name == NULL)
-			goto error;
+		if (rr->name == NULL) {
+			// An empty name is acceptable in null RRs.
+			free_rr(rr);
+			return NULL;
+		}
 		rr->qtype = buffer_read_uint16(buffer);
 		rr->qclass = buffer_read_uint16(buffer);
 		rr->ttl = buffer_read_uint32(buffer);
 		rr->rdlen = buffer_read_uint16(buffer);
-		if (buffer_has_error(buffer))
+		if (buffer_has_error(buffer)) {
+			LOG_WARN("RR rdlen error");
 			goto error;
+		}
 		rr->qtype = ntohs(rr->qtype);
 		rr->qclass = ntohs(rr->qclass);
 		rr->ttl = ntohl(rr->ttl);
 		rr->rdlen = ntohs(rr->rdlen);
 	}
+
+	// LOG_DEBUG("name: %s, qtype: %u, qclass: %u, ttl: %u, rdlen: %u",
+	// 	rr->name, rr->qtype, rr->qclass, rr->ttl, rr->rdlen);
+
 	switch (rr->qtype) {
 		case DNS_TYPE_A:
 		{
 			rr->rdata.a.address[0] = buffer_read_uint32(buffer);
-			if (buffer_has_error(buffer))
+			if (buffer_has_error(buffer)) {
+				LOG_WARN("A address is NULL");
 				goto error;
+			}
 			break;
 		}
 		case DNS_TYPE_AAAA:
 		{
 			for (size_t i=0; i<4; i++) {
 				rr->rdata.aaaa.address[i] = buffer_read_uint32(buffer);
-				if (buffer_has_error(buffer))
+				if (buffer_has_error(buffer)) {
+					LOG_WARN("AAAA address is NULL");
 					goto error;
+				}
 			}
 			break;
 		}
 		case DNS_TYPE_NS:
 			rr->rdata.ns.name = parse_name(buffer);
-			if (rr->rdata.ns.name == NULL)
+			if (rr->rdata.ns.name == NULL) {
+				LOG_WARN("NS name is NULL");
 				goto error;
+			}
 			break;
 		case DNS_TYPE_CNAME:
 			rr->rdata.cname.name = parse_name(buffer);
-			if (rr->rdata.cname.name == NULL)
+			if (rr->rdata.cname.name == NULL) {
+				LOG_WARN("CNAME name is NULL");
 				goto error;
+			}
 			break;
 		case DNS_TYPE_SOA:
 			rr->rdata.soa.mname = parse_name(buffer);
-			if (rr->rdata.soa.mname == NULL)
+			if (rr->rdata.soa.mname == NULL) {
+				LOG_WARN("SOA mname is NULL");
 				goto error;
+			}
 			rr->rdata.soa.rname = parse_name(buffer);
-			if (rr->rdata.soa.rname == NULL)
+			if (rr->rdata.soa.rname == NULL) {
+				LOG_WARN("SOA rname is NULL");
 				goto error;
+			}
 			rr->rdata.soa.serial = buffer_read_uint32(buffer);
 			rr->rdata.soa.refresh = buffer_read_int32(buffer);
 			rr->rdata.soa.retry = buffer_read_int32(buffer);
 			rr->rdata.soa.expire = buffer_read_int32(buffer);
 			rr->rdata.soa.minimum = buffer_read_uint32(buffer);
-			if (buffer_has_error(buffer))
+			if (buffer_has_error(buffer)) {
+				LOG_WARN("SOA minimum error");
 				goto error;
+			}
 			rr->rdata.soa.serial = ntohl(rr->rdata.soa.serial);
 			rr->rdata.soa.refresh = ntohl(rr->rdata.soa.refresh);
 			rr->rdata.soa.retry = ntohl(rr->rdata.soa.retry);
@@ -669,22 +695,30 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 			break;
 		case DNS_TYPE_PTR:
 			rr->rdata.ptr.name = parse_name(buffer);
-			if (rr->rdata.ptr.name == NULL)
+			if (rr->rdata.ptr.name == NULL) {
+				LOG_WARN("PTR name is NULL");
 				goto error;
+			}
 			break;
 		case DNS_TYPE_MX:
 			rr->rdata.mx.preference = buffer_read_uint16(buffer);
-			if (buffer_has_error(buffer))
+			if (buffer_has_error(buffer)) {
+				LOG_WARN("MX preference is NULL");
 				goto error;
+			}
 			rr->rdata.mx.exchange = parse_name(buffer);
-			if (rr->rdata.mx.exchange == NULL)
+			if (rr->rdata.mx.exchange == NULL) {
+				LOG_WARN("MX exchange is NULL");
 				goto error;
+			}
 			rr->rdata.mx.preference = ntohs(rr->rdata.mx.preference);
 			break;
 		case DNS_TYPE_TXT:
 			rr->rdata.txt.data = parse_txtdata(buffer);
-			if (rr->rdata.txt.data == NULL)
+			if (rr->rdata.txt.data == NULL) {
+				LOG_WARN("TXT data is NULL");
 				goto error;
+			}
 			break;
 		case DNS_TYPE_RRSIG:
 			rr->rdata.rrsig.typec = buffer_read_uint16(buffer);
@@ -695,13 +729,19 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 			rr->rdata.rrsig.signature_inception = buffer_read_uint32(buffer);
 			rr->rdata.rrsig.key_tag = buffer_read_uint16(buffer);
 			rr->rdata.rrsig.signer_name = parse_name(buffer);
-			if (rr->rdata.rrsig.signer_name == NULL)
+			if (rr->rdata.rrsig.signer_name == NULL) {
+				LOG_WARN("TXT data is NULL");
 				goto error;
+			}
 			rr->rdata.rrsig.signature = parse_rrsig_signature(buffer);
-			if (rr->rdata.rrsig.signature == NULL)
+			if (rr->rdata.rrsig.signature == NULL) {
+				LOG_WARN("RRSIG signature is NULL");
 				goto error;
-			if (buffer_has_error(buffer))
+			}
+			if (buffer_has_error(buffer)) {
+				LOG_WARN("RRSIG error");
 				goto error;
+			}
 			rr->rdata.rrsig.typec = ntohs(rr->rdata.rrsig.typec);
 			rr->rdata.rrsig.original_ttl = ntohl(rr->rdata.rrsig.original_ttl);
 			rr->rdata.rrsig.signature_expiration = ntohl(rr->rdata.rrsig.signature_expiration);

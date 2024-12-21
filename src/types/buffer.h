@@ -80,6 +80,7 @@ uint32_t buffer_tell(const buffer_t *buffer);
 uint32_t buffer_seek(buffer_t *buffer, uint32_t offset);
 uint32_t buffer_skip(buffer_t *buffer, int offset);
 uint32_t buffer_rewind(buffer_t *buffer);
+uint32_t buffer_remaining(const buffer_t *buffer);
 
 //
 // Reading (from network-byte-order to host-byte-order)

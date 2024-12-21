@@ -17,21 +17,21 @@ static int buffer_safe_size(buffer_t *buffer, uint32_t offset) {
     return 1;
 }
 
-static int buffer_safe_offset(buffer_t *buffer, int offset) {
-    int cur_size = (int)buffer->size;
+static int buffer_safe_offset(buffer_t *buffer, uint32_t offset) {
+    uint32_t cur_size = buffer->size;
     if (offset >= cur_size) {
         buffer->error.code = BUFFER_EOVERFLOW;
         buffer->error.info.memreq = offset;
-        LOG_WARN("Attempt to access an invalid offset (buffer=%p size=%u offset=%d)",
+        LOG_WARN("Attempt to access an invalid offset (buffer=%p size=%u offset=%u)",
             buffer, buffer->size, offset);
         return 0;
     }
-    if (offset < 0) {
-        buffer->error.code = BUFFER_EUNDERFLOW;
-        LOG_WARN("Attempt to access an invalid offset (buffer=%p size=%u offset=%d)",
-            buffer, buffer->size, offset);
-        return 0;
-    }
+    // if (offset < 0) {
+    //     buffer->error.code = BUFFER_EUNDERFLOW;
+    //     LOG_WARN("Attempt to access an invalid offset (buffer=%p size=%u offset=%d)",
+    //         buffer, buffer->size, offset);
+    //     return 0;
+    // }
     return 1;
 }
 
@@ -164,6 +164,10 @@ uint32_t buffer_skip(buffer_t *buffer, int offset) {
 
 uint32_t buffer_rewind(buffer_t *buffer) {
     return buffer_seek(buffer, 0);
+}
+
+uint32_t buffer_remaining(const buffer_t *buffer) {
+    return buffer->size - buffer->current;
 }
 
 int buffer_read(buffer_t *buffer, byte *output, size_t size) {
