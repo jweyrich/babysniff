@@ -13,8 +13,12 @@
 int sniff_packet_fromwire(const byte *packet, size_t length, int protocol) {
 	int result = 0;
 	switch (protocol) {
-		case 0: result = sniff_eth_fromwire(packet, length); break;
-		case ETHERTYPE_IP: result = sniff_ip_fromwire(packet, length); break;
+		case 0:
+			result = sniff_eth_fromwire(packet, length);
+			break;
+		case ETHERTYPE_IP:
+			result = sniff_ip_fromwire(packet, length);
+			break;
 		default: break;
 	}
 	return result;
