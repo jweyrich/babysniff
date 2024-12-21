@@ -1,8 +1,13 @@
 #include "proto_ops.h"
 #include <stdio.h>
+
+#ifndef __USE_MISC
+#define __USE_MISC
+#endif
 #include <arpa/inet.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
+
 #include "config.h"
 #include "log.h"
 #include "utils.h"

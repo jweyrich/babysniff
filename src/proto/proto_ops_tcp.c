@@ -1,8 +1,13 @@
 #include "proto_ops.h"
 #include <stdio.h>
 #include <string.h>
+
+#ifndef __USE_MISC
+#define __USE_MISC
+#endif
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+
 #include "macros.h"
 #include "types/buffer.h"
 #include "config.h"

@@ -2,7 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef __USE_MISC
+#define __USE_MISC
+#endif
 #include <arpa/inet.h>
+
 #include <sys/types.h>
 #include <time.h>
 #include "proto/dns/dns.h"

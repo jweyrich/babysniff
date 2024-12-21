@@ -1,9 +1,14 @@
 #include "proto_ops.h"
 #include <stdio.h>
-#include <arpa/inet.h>
 #include <netdb.h>
 #include <net/ethernet.h>
+
+#ifndef __USE_MISC
+#define __USE_MISC
+#endif
+#include <arpa/inet.h>
 #include <netinet/ip.h>
+
 #include "config.h"
 #include "log.h"
 #include "macros.h"
