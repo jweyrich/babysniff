@@ -395,14 +395,14 @@ static char *parse_rrsig_signature(buffer_t *buffer) {
 }
 
 static void print_header(dns_hdr_t *header) {
-	LOG_PRINTF_INDENT(DNS, 2, "opcode: %s, status: %s, id: %u\n",
+	LOG_PRINTF_INDENT(2, "opcode: %s, status: %s, id: %u\n",
 		totext(DNS_ARRAY_OPCODE, header->flags.expanded.opcode),
 		totext(DNS_ARRAY_RCODE, header->flags.expanded.rcode),
 		header->id);
-	LOG_PRINTF_INDENT(DNS, 2, "flags: %#x [%s]\n",
+	LOG_PRINTF_INDENT(2, "flags: %#x [%s]\n",
 		header->flags.single,
 		flags_totext(&header->flags.expanded));
-	LOG_PRINTF_INDENT(DNS, 2, "query: %u, answer: %u, authority: %u, additional: %u\n",
+	LOG_PRINTF_INDENT(2, "query: %u, answer: %u, authority: %u, additional: %u\n",
 		header->qd_c,
 		header->an_c,
 		header->ns_c,
@@ -444,7 +444,7 @@ error:
 }
 
 static void print_question(dns_question_t *question) {
-	LOG_PRINTF_INDENT(DNS, 4, "%s\t\t\t%s\t%s\n",
+	LOG_PRINTF_INDENT(4, "%s\t\t\t%s\t%s\n",
 		question->name,
 		totext(DNS_ARRAY_QCLASS, question->qclass),
 		totext(DNS_ARRAY_QTYPE, question->qtype));
@@ -488,7 +488,7 @@ char *parse_timestamp(char *out, size_t out_size, time_t in) {
 }
 
 static void print_rr(dns_rr_t *rr) {
-	LOG_PRINTF_INDENT(DNS, 4, "%s\t\t%u\t%s\t%s\t",
+	LOG_PRINTF_INDENT(4, "%s\t\t%u\t%s\t%s\t",
 		rr->name, rr->ttl,
 		totext(DNS_ARRAY_QCLASS, rr->qclass),
 		totext(DNS_ARRAY_QTYPE, rr->qtype));
@@ -497,24 +497,24 @@ static void print_rr(dns_rr_t *rr) {
 		{
 			char ip_as_str[INET_ADDRSTRLEN];
 			const char *ip_addr = utils_in_addr_to_str(ip_as_str, sizeof(ip_as_str), (struct in_addr *)rr->rdata.a.address);
-			LOG_PRINTF(DNS, "%s\n", ip_addr);
+			LOG_PRINTF("%s\n", ip_addr);
 			break;
 		}
 		case DNS_TYPE_AAAA:
 		{
 			char ip_as_str[INET6_ADDRSTRLEN];
 			const char *ip_addr = utils_in6_addr_to_str(ip_as_str, sizeof(ip_as_str), (struct in6_addr *)rr->rdata.aaaa.address);
-			LOG_PRINTF(DNS, "%s\n", ip_addr);
+			LOG_PRINTF("%s\n", ip_addr);
 			break;
 		}
 		case DNS_TYPE_NS:
-			LOG_PRINTF(DNS, "%s\n", rr->rdata.ns.name);
+			LOG_PRINTF("%s\n", rr->rdata.ns.name);
 			break;
 		case DNS_TYPE_CNAME:
-			LOG_PRINTF(DNS, "%s\n", rr->rdata.cname.name);
+			LOG_PRINTF("%s\n", rr->rdata.cname.name);
 			break;
 		case DNS_TYPE_SOA:
-			LOG_PRINTF(DNS, "%s %s %u %d %d %d %u\n",
+			LOG_PRINTF("%s %s %u %d %d %d %u\n",
 				rr->rdata.soa.mname,
 				rr->rdata.soa.rname,
 				rr->rdata.soa.serial,
@@ -524,33 +524,33 @@ static void print_rr(dns_rr_t *rr) {
 				rr->rdata.soa.minimum);
 			break;
 		case DNS_TYPE_PTR:
-			LOG_PRINTF(DNS, "%s\n", rr->rdata.ptr.name);
+			LOG_PRINTF("%s\n", rr->rdata.ptr.name);
 			break;
 		case DNS_TYPE_MX:
-			LOG_PRINTF(DNS, "%u\t%s\n",
+			LOG_PRINTF("%u\t%s\n",
 				rr->rdata.mx.preference,
 				rr->rdata.mx.exchange);
 			break;
 		case DNS_TYPE_TXT:
-			LOG_PRINTF(DNS, "\"%s\" \n", rr->rdata.txt.data);
+			LOG_PRINTF("\"%s\" \n", rr->rdata.txt.data);
 			break;
 		case DNS_TYPE_RRSIG:
 		{
 			char sig_expiration[15];
 			char sig_inception[15];
-			LOG_PRINTF(DNS, "%s %s %u %u %s (\n",
+			LOG_PRINTF("%s %s %u %u %s (\n",
 				totext(DNS_ARRAY_QTYPE, rr->rdata.rrsig.typec),
 				totext(DNSSEC_ARRAY_ALGORITHM, rr->rdata.rrsig.algnum),
 				rr->rdata.rrsig.labels,
 				rr->rdata.rrsig.original_ttl,
 				parse_timestamp(sig_expiration, sizeof(sig_expiration), rr->rdata.rrsig.signature_expiration)
 			);
-			LOG_PRINTF_INDENT_TAB(DNS, 5, "   %s %u %s\n",
+			LOG_PRINTF_INDENT_TAB(5, "   %s %u %s\n",
 				parse_timestamp(sig_inception, sizeof(sig_inception), rr->rdata.rrsig.signature_inception),
 				rr->rdata.rrsig.key_tag,
 				rr->rdata.rrsig.signer_name
 			);
-			LOG_PRINTF_INDENT_TAB(DNS, 5, "   %s )\n",
+			LOG_PRINTF_INDENT_TAB(5, "   %s )\n",
 				rr->rdata.rrsig.signature
 			);
 			break;
@@ -558,7 +558,7 @@ static void print_rr(dns_rr_t *rr) {
 		case DNS_TYPE_NSEC3:
 			break;
 		default:
-			//LOG_PRINTF(DNS, "\n");
+			//LOG_PRINTF("\n");
 			LOG_WARN("Unhandled qtype (%u -> %s)", rr->qtype, totext(DNS_ARRAY_QTYPE, rr->qtype));
 			break;
 	}
@@ -720,7 +720,7 @@ error:
 	return NULL;
 }
 
-int sniff_dns_fromwire(const byte *packet, size_t length) {
+int sniff_dns_fromwire(const byte *packet, size_t length, const config_t *config) {
 	int result = 0;
 	buffer_t buffer = BUFFER_INITIALIZER;
 	dns_hdr_t *header;
@@ -728,44 +728,49 @@ int sniff_dns_fromwire(const byte *packet, size_t length) {
 
 	buffer_set_data(&buffer, (byte *)packet, length);
 
-	LOG_PRINTF(DNS, "-- DNS (%u bytes)\n", buffer_size(&buffer));
+	if (config->filters_flag.dns) {
+		LOG_PRINTF("-- DNS (%u bytes)\n", buffer_size(&buffer));
+	}
+
 	header = parse_header(&buffer);
 	if (header == NULL) { result = -1; }
 	else { print_header(header); }
 
-	LOG_PRINTF_INDENT(DNS, 2, "QUESTION SECTION:\n");
-	for (i=0; result == 0 && i < header->qd_c; i++) {
-		dns_question_t *section = parse_question(&buffer);
-		if (section == NULL) { result = -1; }
-		else { print_question(section); free_question(section); }
-	}
-	LOG_PRINTF_INDENT(DNS, 2, "ANSWER SECTION:\n");
-	for (i=0; result == 0 && i < header->an_c; i++) {
-		dns_rr_t *section = parse_rr(&buffer);
-		if (section == NULL) { result = -1; }
-		else { print_rr(section); free_rr(section); }
-	}
-	LOG_PRINTF_INDENT(DNS, 2, "AUTHORITY SECTION:\n");
-	for (i=0; result == 0 && i < header->ns_c; i++) {
-		dns_rr_t *section = parse_rr(&buffer);
-		if (section == NULL) { result = -1; }
-		else { print_rr(section); free_rr(section); }
-	}
-	LOG_PRINTF_INDENT(DNS, 2, "ADDITIONAL SECTION:\n");
-	for (i=0; result == 0 && i < header->ar_c; i++) {
-		dns_rr_t *section = parse_rr(&buffer);
-		if (section == NULL) { result = -1; }
-		else { print_rr(section); free_rr(section); }
+	if (config->filters_flag.dns) {
+		LOG_PRINTF_INDENT(2, "QUESTION SECTION:\n");
+		for (i=0; result == 0 && i < header->qd_c; i++) {
+			dns_question_t *section = parse_question(&buffer);
+			if (section == NULL) { result = -1; }
+			else { print_question(section); free_question(section); }
+		}
+		LOG_PRINTF_INDENT(2, "ANSWER SECTION:\n");
+		for (i=0; result == 0 && i < header->an_c; i++) {
+			dns_rr_t *section = parse_rr(&buffer);
+			if (section == NULL) { result = -1; }
+			else { print_rr(section); free_rr(section); }
+		}
+		LOG_PRINTF_INDENT(2, "AUTHORITY SECTION:\n");
+		for (i=0; result == 0 && i < header->ns_c; i++) {
+			dns_rr_t *section = parse_rr(&buffer);
+			if (section == NULL) { result = -1; }
+			else { print_rr(section); free_rr(section); }
+		}
+		LOG_PRINTF_INDENT(2, "ADDITIONAL SECTION:\n");
+		for (i=0; result == 0 && i < header->ar_c; i++) {
+			dns_rr_t *section = parse_rr(&buffer);
+			if (section == NULL) { result = -1; }
+			else { print_rr(section); free_rr(section); }
+		}
 	}
 
 	free_header(header);
 
 //	packet = (byte *)PTR_ADD(packet, DNS_HDR_LEN);
 //	length -= DNS_HDR_LEN;
-#if LOG_ENABLED(DNS_DATA)
-	LOG_PRINTF(DNS_DATA, "showing %lu bytes:\n", length);
-	dump_hex(stdout, packet, length, 0);
-#endif
+	if (config->filters_flag.dns_data) {
+		LOG_PRINTF("showing %lu bytes:\n", length);
+		dump_hex(stdout, packet, length, 0);
+	}
 //	if (result == 0) {
 //		packet = buffer_data_ptr(&buffer);
 //		length = buffer_left(&buffer);

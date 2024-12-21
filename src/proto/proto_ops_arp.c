@@ -108,7 +108,7 @@ static int fromtext(arp_array_e type, const char *value) {
 	return result == NULL ? pair_array_last(array)->key : result->key;
 }
 
-int sniff_arp_fromwire(const byte *packet, size_t length) {
+int sniff_arp_fromwire(const byte *packet, size_t length, const config_t *config) {
 	const struct ether_arp *header = (struct ether_arp *)packet;
 	uint16_t arphrd = ntohs(header->arp_hrd);
 	uint16_t arppro = ntohs(header->arp_pro);
@@ -126,15 +126,18 @@ int sniff_arp_fromwire(const byte *packet, size_t length) {
 	char arp_tpa_as_str[INET_ADDRSTRLEN];
 	utils_in_addr_to_str(arp_tpa_as_str, sizeof(arp_tpa_as_str), (struct in_addr *)&header->arp_tpa);
 
-	LOG_PRINTF(ARP, "-- ARP (%lu bytes)\n", length);
-	LOG_PRINTF_INDENT(ARP, 2, "hrd: %u [%s]\n", arphrd, totext(ARP_ARRAY_HRD, arphrd)); // format of hardware address
-	LOG_PRINTF_INDENT(ARP, 2, "pro: 0x%04x [%s]\n", arppro, totext(ARP_ARRAY_PRO, arppro)); // format of protocol address
-	LOG_PRINTF_INDENT(ARP, 2, "hln: %u\n", header->arp_hln); // length of hardware address
-	LOG_PRINTF_INDENT(ARP, 2, "pln: %u\n", header->arp_pln); // length of protocol address
-	LOG_PRINTF_INDENT(ARP, 2, "op : %u [%s]\n", arpop, totext(ARP_ARRAY_OP, arpop));
-	LOG_PRINTF_INDENT(ARP, 2, "sha: %s\n", arp_sha_as_str); // sender hardware address
-	LOG_PRINTF_INDENT(ARP, 2, "spa: %s\n", arp_spa_as_str); // sender protocol address
-	LOG_PRINTF_INDENT(ARP, 2, "tha: %s\n", arp_tha_as_str); // target hardware address
-	LOG_PRINTF_INDENT(ARP, 2, "tpa: %s\n", arp_tpa_as_str); // target protocol address
+	if (config->filters_flag.arp) {
+		LOG_PRINTF("-- ARP (%lu bytes)\n", length);
+		LOG_PRINTF_INDENT(2, "hrd: %u [%s]\n", arphrd, totext(ARP_ARRAY_HRD, arphrd)); // format of hardware address
+		LOG_PRINTF_INDENT(2, "pro: 0x%04x [%s]\n", arppro, totext(ARP_ARRAY_PRO, arppro)); // format of protocol address
+		LOG_PRINTF_INDENT(2, "hln: %u\n", header->arp_hln); // length of hardware address
+		LOG_PRINTF_INDENT(2, "pln: %u\n", header->arp_pln); // length of protocol address
+		LOG_PRINTF_INDENT(2, "op : %u [%s]\n", arpop, totext(ARP_ARRAY_OP, arpop));
+		LOG_PRINTF_INDENT(2, "sha: %s\n", arp_sha_as_str); // sender hardware address
+		LOG_PRINTF_INDENT(2, "spa: %s\n", arp_spa_as_str); // sender protocol address
+		LOG_PRINTF_INDENT(2, "tha: %s\n", arp_tha_as_str); // target hardware address
+		LOG_PRINTF_INDENT(2, "tpa: %s\n", arp_tpa_as_str); // target protocol address
+	}
+
 	return 0;
 }

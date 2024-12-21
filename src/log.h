@@ -1,7 +1,6 @@
 //
 //  Usage:
 //
-//	LOG_ENABLED(flag), returns true or false
 //	LOG_TRACE();
 //	LOG(format, ...)
 //	LOG_DEBUG(format, ...)
@@ -9,9 +8,9 @@
 //	LOG_WARN(format, ...)
 //	LOG_ERROR(format, ...)
 //	LOG_FATAL(format, ...)
-//	LOG_PRINTF(flag, format, ...)
-//	LOG_PRINTF_INDENT(flag, indent, format, ...)
-//	LOG_PRINTF_INDENT_TAB(flag, indent, format, ...)
+//	LOG_PRINTF(format, ...)
+//	LOG_PRINTF_INDENT(indent, format, ...)
+//	LOG_PRINTF_INDENT_TAB(indent, format, ...)
 //
 
 #pragma once
@@ -29,17 +28,9 @@
 #define LOG_SELECT_FUNC(FUNCNAME,ARGSN,...) LOG_RUN_FUNC(LOG_PASTE2(FUNCNAME, ARGSN), __VA_ARGS__)
 #define LOG_RUN_FUNC(FUNCNAME,...)			FUNCNAME(__VA_ARGS__)
 
-#define LOG_ENABLED(flag)					(LOG_ ## flag != 0)
-
-#ifdef DEBUG
-#define LOG_TRACE \
-	log_level_5(__FILE__, __LINE__, "TRACE", "%s called", __func__) //__PRETTY_FUNCTION__
 #define LOG(...) \
 	LOG_SELECT_FUNC(log_level_, LOG_NARG(LOG_ARG_0_4_5_RSEQ,__VA_ARGS__), \
 		__FILE__, __LINE__, "LOG", __VA_ARGS__)
-#define LOG_DEBUG(...) \
-	LOG_SELECT_FUNC(log_level_, LOG_NARG(LOG_ARG_0_4_5_RSEQ,__VA_ARGS__), \
-		__FILE__, __LINE__, "DEBUG", __VA_ARGS__)
 #define LOG_INFO(...) \
 	LOG_SELECT_FUNC(log_level_, LOG_NARG(LOG_ARG_0_4_5_RSEQ,__VA_ARGS__), \
 		__FILE__, __LINE__, "INFO", __VA_ARGS__)
@@ -52,42 +43,33 @@
 #define LOG_FATAL(...) \
 	LOG_SELECT_FUNC(log_level_, LOG_NARG(LOG_ARG_0_4_5_RSEQ,__VA_ARGS__), \
 		__FILE__, __LINE__, "FATAL", __VA_ARGS__)
-
-#define LOG_PRINTF(flag, ...) \
+#define LOG_PRINTF(...) \
 	do { \
-		if (LOG_ENABLED(flag)) { \
-			LOG_SELECT_FUNC(log_printf_, LOG_NARG(LOG_ARG_0_1_2_RSEQ,__VA_ARGS__), \
-				__VA_ARGS__); \
-		} \
+		LOG_SELECT_FUNC(log_printf_, LOG_NARG(LOG_ARG_0_1_2_RSEQ,__VA_ARGS__), \
+			__VA_ARGS__); \
 	} while (0)
 
-#define LOG_PRINTF_INDENT(flag, indent, ...) \
+#define LOG_PRINTF_INDENT(indent, ...) \
 	do { \
-		if (LOG_ENABLED(flag)) { \
-			LOG_SELECT_FUNC(log_printf_indent_, LOG_NARG(LOG_ARG_0_3_4_RSEQ,__VA_ARGS__), \
-				indent, " ", __VA_ARGS__); \
-		} \
+		LOG_SELECT_FUNC(log_printf_indent_, LOG_NARG(LOG_ARG_0_3_4_RSEQ,__VA_ARGS__), \
+			indent, " ", __VA_ARGS__); \
 	} while (0)
 
-#define LOG_PRINTF_INDENT_TAB(flag, indent, ...) \
+#define LOG_PRINTF_INDENT_TAB(indent, ...) \
 	do { \
-		if (LOG_ENABLED(flag)) { \
-			LOG_SELECT_FUNC(log_printf_indent_, LOG_NARG(LOG_ARG_0_3_4_RSEQ,__VA_ARGS__), \
-				indent * 8, "\t", __VA_ARGS__); \
-		} \
+		LOG_SELECT_FUNC(log_printf_indent_, LOG_NARG(LOG_ARG_0_3_4_RSEQ,__VA_ARGS__), \
+			indent * 8, "\t", __VA_ARGS__); \
 	} while (0)
 
+#ifdef DEBUG
+#define LOG_TRACE \
+	log_level_5(__FILE__, __LINE__, "TRACE", "%s called", __func__) //__PRETTY_FUNCTION__
+#define LOG_DEBUG(...) \
+	LOG_SELECT_FUNC(log_level_, LOG_NARG(LOG_ARG_0_4_5_RSEQ,__VA_ARGS__), \
+		__FILE__, __LINE__, "DEBUG", __VA_ARGS__)
 #else // ifdef DEBUG
-#define LOG_TRACE									(void)0
-#define LOG(...)									(void)0
-#define LOG_DEBUG(...)								(void)0
-#define LOG_INFO(...)								(void)0
-#define LOG_WARN(...)								(void)0
-#define LOG_ERROR(...)								(void)0
-#define LOG_FATAL(...)								(void)0
-#define LOG_PRINTF(flag, ...)						(void)0
-#define LOG_PRINTF_INDENT(flag, indent, ...)		(void)0
-#define LOG_PRINTF_INDENT_TAB(flag, indent, ...)	(void)0
+#define LOG_TRACE							(void)0
+#define LOG_DEBUG(...)						(void)0
 #endif // ifdef DEBUG
 
 void log_level_4(const char *file, int line, const char *level, const char *format);

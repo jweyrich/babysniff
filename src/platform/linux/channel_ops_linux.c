@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include "log.h"
 #include "types.h"
+#include "config.h"
 
 static int linux_ensure_version(channel_t *channel) {
 	return 0;
@@ -155,7 +156,7 @@ void sniff_close(channel_t *channel) {
 	sniff_free_channel(channel);
 }
 
-int sniff_readloop(channel_t *channel, long timeout) {
+int sniff_readloop(channel_t *channel, long timeout, const config_t *config) {
 	byte *begin, *end, *current;
 	struct sockaddr packet_info;
 	size_t packet_info_size = sizeof(struct sockaddr_ll);
@@ -181,7 +182,7 @@ int sniff_readloop(channel_t *channel, long timeout) {
 			while (begin < end) {
 				//header = (struct eth_hdr *)begin;
 				current = begin; // Point to the start of the received buffer because it's not encapsulated.
-				sniff_packet_fromwire(current, bytes_read, 0);
+				sniff_packet_fromwire(current, bytes_read, 0, config);
 				begin += bytes_read;
 			}
 		}

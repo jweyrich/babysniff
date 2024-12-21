@@ -13,6 +13,7 @@
 #include <time.h>
 #include "log.h"
 #include "macros.h"
+#include "config.h"
 
 // TODO(jweyrich): parse options
 // http://bpf.4.man.smakd.potaroo.net
@@ -166,7 +167,7 @@ void sniff_close(channel_t *channel) {
 	sniff_free_channel(channel);
 }
 
-int sniff_readloop(channel_t *channel, long timeout) {
+int sniff_readloop(channel_t *channel, long timeout, const config_t *config) {
 	byte *begin, *end, *current;
 	struct bpf_hdr *header;
 	ssize_t bytes_read;
@@ -188,7 +189,7 @@ int sniff_readloop(channel_t *channel, long timeout) {
 			while (begin < end) {
 				header = (struct bpf_hdr *)begin;
 				current = begin + header->bh_hdrlen;
-				sniff_packet_fromwire(current, header->bh_caplen, 0);
+				sniff_packet_fromwire(current, header->bh_caplen, 0, config);
 				begin += BPF_WORDALIGN(header->bh_caplen + header->bh_hdrlen);
 			}
 		}

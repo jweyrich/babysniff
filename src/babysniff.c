@@ -8,6 +8,7 @@
 #include "arguments.h"
 #include "daemon.h"
 #include "security.h"
+#include "config.h"
 
 // #ifndef _GNU_SOURCE
 // #define _POSIX_C_SOURCE 2 // POSIX.1, POSIX.2
@@ -24,7 +25,7 @@
 // #endif
 
 // sig_atomic_t is defined by C99
-static volatile sig_atomic_t g_done = 0; 
+static volatile sig_atomic_t g_done = 0;
 
 static void cleanup(int signal) {
 	printf("Received signal %d\n", signal);
@@ -45,9 +46,15 @@ static void install_sighandlers(void) {
 
 int main(int argc, char **argv) {
 	cli_args_t args;
+	config_t config;
 
-	if (parse_arguments(&args, argc, argv) < 0)
+	if (parse_arguments(&args, argc, argv) < 0) {
 		return EXIT_FAILURE;
+	}
+
+	if (config_initialize(&config, &args) < 0) {
+		return EXIT_FAILURE;
+	}
 
 	if (geteuid() != 0) {
 		fprintf(stderr, "Requires superuser privileges\n");
@@ -89,7 +96,7 @@ int main(int argc, char **argv) {
 	}
 
 	while (!g_done) {
-		sniff_readloop(channel, 1);
+		sniff_readloop(channel, 1, &config);
 	}
 	sniff_close(channel);
 
