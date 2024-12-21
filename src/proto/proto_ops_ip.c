@@ -23,6 +23,13 @@ int sniff_ip_fromwire(const byte *packet, size_t length) {
 		LOG_PRINTF_INDENT(IP, 2, "\tinvalid packet\n");
 		return -1;
 	}
+
+	char ip_src_as_str[INET_ADDRSTRLEN];
+	utils_in_addr_to_str(ip_src_as_str, sizeof(ip_src_as_str), &header->ip_src);
+
+	char ip_dst_as_str[INET_ADDRSTRLEN];
+	utils_in_addr_to_str(ip_dst_as_str, sizeof(ip_dst_as_str), &header->ip_dst);
+
 	LOG_PRINTF_INDENT(IP, 2, "\tv  : %u\n", header->ip_v); // version
 	LOG_PRINTF_INDENT(IP, 2, "\thl : %u\n", header->ip_hl); // header length
 	LOG_PRINTF_INDENT(IP, 2, "\ttos: 0x%x\n", header->ip_tos); // type of service
@@ -32,8 +39,8 @@ int sniff_ip_fromwire(const byte *packet, size_t length) {
 	LOG_PRINTF_INDENT(IP, 2, "\tttl: %u\n", header->ip_ttl); // time to live
 	LOG_PRINTF_INDENT(IP, 2, "\tp  : %u [%s]\n", header->ip_p, getprotobynumber(header->ip_p)->p_name); // protocol
 	LOG_PRINTF_INDENT(IP, 2, "\tsum: %u\n", ntohs(header->ip_sum)); // checksum
-	LOG_PRINTF_INDENT(IP, 2, "\tsrc: %s\n", inet_ntoa(header->ip_src)); // source address
-	LOG_PRINTF_INDENT(IP, 2, "\tdst: %s\n", inet_ntoa(header->ip_dst)); // destination address
+	LOG_PRINTF_INDENT(IP, 2, "\tsrc: %s\n", ip_src_as_str); // source address
+	LOG_PRINTF_INDENT(IP, 2, "\tdst: %s\n", ip_dst_as_str); // destination address
 
 	// fragmented?
 	if ((header->ip_off & IP_MF) != 0) {

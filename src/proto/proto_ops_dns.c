@@ -13,6 +13,7 @@
 #include "log.h"
 #include "types/buffer.h"
 #include "types/pair.h"
+#include "utils.h"
 
 typedef enum dns_array {
 	DNS_ARRAY_OPCODE,
@@ -489,16 +490,16 @@ static void print_rr(dns_rr_t *rr) {
 	switch (rr->qtype) {
 		case DNS_TYPE_A:
 		{
-			struct in_addr *ip_addr;
-			ip_addr = (struct in_addr *)&rr->rdata.a.address;
-			LOG_PRINTF(DNS, "%s\n", inet_ntoa(*ip_addr));
+			char ip_as_str[INET_ADDRSTRLEN];
+			const char *ip_addr = utils_in_addr_to_str(ip_as_str, sizeof(ip_as_str), (struct in_addr *)rr->rdata.a.address);
+			LOG_PRINTF(DNS, "%s\n", ip_addr);
 			break;
 		}
 		case DNS_TYPE_AAAA:
 		{
-			char ip_as_str[INET6_ADDRSTRLEN] = {0};
-			struct in6_addr *ip_addr = (struct in6_addr *)rr->rdata.aaaa.address;
-			LOG_PRINTF(DNS, "%s\n", inet_ntop(AF_INET6, ip_addr, ip_as_str, sizeof(ip_as_str)));
+			char ip_as_str[INET6_ADDRSTRLEN];
+			const char *ip_addr = utils_in6_addr_to_str(ip_as_str, sizeof(ip_as_str), (struct in6_addr *)rr->rdata.aaaa.address);
+			LOG_PRINTF(DNS, "%s\n", ip_addr);
 			break;
 		}
 		case DNS_TYPE_NS:
@@ -550,7 +551,6 @@ static void print_rr(dns_rr_t *rr) {
 			break;
 		}
 		case DNS_TYPE_NSEC3:
-
 			break;
 		default:
 			//LOG_PRINTF(DNS, "\n");
@@ -618,11 +618,9 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 	switch (rr->qtype) {
 		case DNS_TYPE_A:
 		{
-			rr->rdata.a.address = buffer_read_uint32(buffer);
+			rr->rdata.a.address[0] = buffer_read_uint32(buffer);
 			if (buffer_has_error(buffer))
 				goto error;
-			// Do NOT swap it
-			//rr->rdata.a.address = ntohl(rr->rdata.a.address);
 			break;
 		}
 		case DNS_TYPE_AAAA:
@@ -706,7 +704,6 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 			rr->rdata.rrsig.key_tag = ntohs(rr->rdata.rrsig.key_tag);
 			break;
 		case DNS_TYPE_NSEC3:
-
 			break;
 		default:
 			break;

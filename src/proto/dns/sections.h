@@ -2,6 +2,7 @@
 
 #include "proto/dns/types.h"
 #include "types/queue.h"
+#include <stdint.h>
 
 //
 // Labels
@@ -28,7 +29,7 @@ typedef struct dns_question {
 // A
 //
 typedef struct dns_rdata_a {
-	uint32_t	address; // Internet address
+	uint32_t	address[1]; // Internet address
 } dns_rdata_a_t;
 
 //

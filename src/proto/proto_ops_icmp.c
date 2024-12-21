@@ -5,6 +5,7 @@
 #include <netinet/ip_icmp.h>
 #include "config.h"
 #include "log.h"
+#include "utils.h"
 
 int sniff_icmp_fromwire(const byte *packet, size_t length) {
 	const struct icmp *header = (struct icmp *)packet;
@@ -14,6 +15,7 @@ int sniff_icmp_fromwire(const byte *packet, size_t length) {
 		LOG_PRINTF_INDENT(ICMP, 2, "\tinvalid packet\n");
 		return -1;
 	}
+
 	LOG_PRINTF_INDENT(ICMP, 2, "\ttype   : %u\n", header->icmp_type); // type of message
 	LOG_PRINTF_INDENT(ICMP, 2, "\tcode   : %u\n", header->icmp_code); // type sub code
 	LOG_PRINTF_INDENT(ICMP, 2, "\tcksum  : %u\n", ntohs(header->icmp_cksum)); // ones complement cksum of struct
@@ -29,7 +31,9 @@ int sniff_icmp_fromwire(const byte *packet, size_t length) {
 			LOG_PRINTF_INDENT(ICMP, 2, "\tvoid   : %u\n", ntohl(header->icmp_void));
 		}
 	} else if (header->icmp_type == ICMP_REDIRECT) {
-		LOG_PRINTF_INDENT(ICMP, 2, "\tgwaddr : %s\n", inet_ntoa(*(struct in_addr *)&(header->icmp_gwaddr)));
+		char icmp_gwaddr_as_str[INET_ADDRSTRLEN];
+		utils_in_addr_to_str(icmp_gwaddr_as_str, sizeof(icmp_gwaddr_as_str), &header->icmp_gwaddr);
+		LOG_PRINTF_INDENT(ICMP, 2, "\tgwaddr : %s\n", icmp_gwaddr_as_str);
 	} else if (header->icmp_type == ICMP_TIMXCEED) {
 		LOG_PRINTF_INDENT(ICMP, 2, "\tvoid   : %u\n", ntohl(header->icmp_void));
 	}

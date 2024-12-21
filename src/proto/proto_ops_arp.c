@@ -9,6 +9,7 @@
 #include "config.h"
 #include "log.h"
 #include "types/pair.h"
+#include "utils.h"
 
 // TODO(jweyrich): request/responses: http://64.233.163.132/search?q=cache:fTLz8j_w-0YJ:www.few.vu.nl/~cn/arp.c+arp_hln&cd=1&hl=en&ct=clnk
 
@@ -108,6 +109,12 @@ int sniff_arp_fromwire(const byte *packet, size_t length) {
 	uint16_t arppro = ntohs(header->arp_pro);
 	uint16_t arpop = ntohs(header->arp_op);
 
+	char arp_tha_as_str[INET_ADDRSTRLEN];
+	utils_in_addr_to_str(arp_tha_as_str, sizeof(arp_tha_as_str), (struct in_addr *)&header->arp_spa);
+
+	char arp_tpa_as_str[INET_ADDRSTRLEN];
+	utils_in_addr_to_str(arp_tpa_as_str, sizeof(arp_tpa_as_str), (struct in_addr *)&header->arp_tpa);
+
 	LOG_PRINTF(ARP, "-- ARP (%lu bytes)\n", length);
 	LOG_PRINTF_INDENT(ARP, 2, "hrd: %u [%s]\n", arphrd, totext(ARP_ARRAY_HRD, arphrd)); // format of hardware address
 	LOG_PRINTF_INDENT(ARP, 2, "pro: 0x%04x [%s]\n", arppro, totext(ARP_ARRAY_PRO, arppro)); // format of protocol address
@@ -115,8 +122,8 @@ int sniff_arp_fromwire(const byte *packet, size_t length) {
 	LOG_PRINTF_INDENT(ARP, 2, "pln: %u\n", header->arp_pln); // length of protocol address
 	LOG_PRINTF_INDENT(ARP, 2, "op : %u [%s]\n", arpop, totext(ARP_ARRAY_OP, arpop));
 	LOG_PRINTF_INDENT(ARP, 2, "sha: %s\n", ether_ntoa((struct ether_addr *)&header->arp_sha)); // sender hardware address
-	LOG_PRINTF_INDENT(ARP, 2, "spa: %s\n", inet_ntoa(*(struct in_addr *)&header->arp_spa)); // sender protocol address
+	LOG_PRINTF_INDENT(ARP, 2, "spa: %s\n", arp_tha_as_str); // sender protocol address
 	LOG_PRINTF_INDENT(ARP, 2, "tha: %s\n", ether_ntoa((struct ether_addr *)&header->arp_tha)); // target hardware address
-	LOG_PRINTF_INDENT(ARP, 2, "tpa: %s\n", inet_ntoa(*(struct in_addr *)&header->arp_tpa)); // target protocol address
+	LOG_PRINTF_INDENT(ARP, 2, "tpa: %s\n", arp_tpa_as_str); // target protocol address
 	return 0;
 }
