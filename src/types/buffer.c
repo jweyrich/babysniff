@@ -146,15 +146,18 @@ inline uint32_t buffer_tell(const buffer_t *buffer) {
 }
 
 uint32_t buffer_seek(buffer_t *buffer, uint32_t offset) {
-    if (!buffer_safe_offset(buffer, offset)) return 0;
+    if (!buffer_safe_offset(buffer, offset))
+        return 0;
     buffer->current = offset;
     return offset;
 }
 
 uint32_t buffer_skip(buffer_t *buffer, int offset) {
-    if (offset == 0) return 0;
+    if (offset == 0)
+        return 0;
     int new_offset = offset + (int)buffer->current;
-    if (!buffer_safe_offset(buffer, new_offset)) return 0;
+    if (!buffer_safe_offset(buffer, new_offset))
+        return 0;
     buffer->current = (uint32_t)new_offset;
     return abs(offset);
 }
@@ -165,19 +168,19 @@ uint32_t buffer_rewind(buffer_t *buffer) {
 
 int buffer_read(buffer_t *buffer, byte *output, size_t size) {
     byte *data = buffer_data_ptr(buffer);
-    if (!buffer_safe_size(buffer, size)) return 0;
+    if (!buffer_safe_size(buffer, size))
+        return 0;
     memcpy(output, (const void*)data, size);
     buffer->current += size;
     return size;
 }
 
 byte buffer_read_byte(buffer_t *buffer) {
-    byte *data;
-    byte output;
-    if (!buffer_safe_size(buffer, 1)) return 0;
-    data = buffer_data_ptr(buffer);
+    if (!buffer_safe_size(buffer, 1))
+        return 0;
+    byte *data = buffer_data_ptr(buffer);
     buffer->current += 1;
-    output = ((byte)data[0]);
+    byte output = ((byte)data[0]);
     return output;
 }
 
@@ -186,23 +189,21 @@ inline int8_t buffer_read_int8(buffer_t *buffer) {
 }
 
 int16_t buffer_read_int16(buffer_t *buffer) {
-    byte *data;
-    int16_t output;
-    if (!buffer_safe_size(buffer, 2)) return 0;
-    data = buffer_data_ptr(buffer);
+    if (!buffer_safe_size(buffer, 2))
+        return 0;
+    byte *data = buffer_data_ptr(buffer);
     buffer->current += 2;
-    output = ((int16_t)data[1]) << 8;
+    int16_t output = ((int16_t)data[1]) << 8;
     output |= ((int16_t)data[0]);
     return output;
 }
 
 int32_t buffer_read_int32(buffer_t *buffer) {
-    byte *data;
-    int32_t output;
-    if (!buffer_safe_size(buffer, 4)) return 0;
-    data = buffer_data_ptr(buffer);
+    if (!buffer_safe_size(buffer, 4))
+        return 0;
+    byte *data = buffer_data_ptr(buffer);
     buffer->current += 4;
-    output = ((int32_t)data[3]) << 24;
+    int32_t output = ((int32_t)data[3]) << 24;
     output |= ((int32_t)data[2]) << 16;
     output |= ((int32_t)data[1]) << 8;
     output |= ((int32_t)data[0]);
@@ -210,12 +211,11 @@ int32_t buffer_read_int32(buffer_t *buffer) {
 }
 
 int64_t buffer_read_int64(buffer_t *buffer) {
-    byte *data;
-    int64_t output;
-    if (!buffer_safe_size(buffer, 8)) return 0;
-    data = buffer_data_ptr(buffer);
+    if (!buffer_safe_size(buffer, 8))
+        return 0;
+    byte *data = buffer_data_ptr(buffer);
     buffer->current += 8;
-    output = ((int64_t)data[7]) << 56;
+    int64_t output = ((int64_t)data[7]) << 56;
     output |= ((int64_t)data[6]) << 48;
     output |= ((int64_t)data[5]) << 40;
     output |= ((int64_t)data[4]) << 32;
@@ -270,7 +270,8 @@ char *buffer_strndup(buffer_t *buffer, size_t size) {
 
 int buffer_write(buffer_t *buffer, const byte *input, size_t size) {
     byte *data = buffer_data_ptr(buffer);
-    if (!buffer_safe_size(buffer, size)) return 0;
+    if (!buffer_safe_size(buffer, size))
+        return 0;
     memcpy(data, input, size);
     buffer->current += size;
     buffer->used += size;
@@ -280,7 +281,8 @@ int buffer_write(buffer_t *buffer, const byte *input, size_t size) {
 void buffer_write_byte(buffer_t *buffer, byte input) {
     // TODO(jweyrich): rewrite this like the read functions
     byte *data = buffer_data_ptr(buffer);
-    if (!buffer_safe_size(buffer, 1)) return;
+    if (!buffer_safe_size(buffer, 1))
+        return;
     *data = input & 0xff;
     ++buffer->current;
     ++buffer->used;
@@ -324,7 +326,8 @@ inline void buffer_write_uint64(buffer_t *buffer, uint64_t input) {
 void buffer_write_string(buffer_t *buffer, const char *input) {
     byte *data = buffer_data_ptr(buffer);
     size_t size = strlen(input) + 1; // length + \0
-    if (!buffer_safe_size(buffer, size)) return;
+    if (!buffer_safe_size(buffer, size))
+        return;
     strcpy((char *)data, input);
     buffer->current += size;
     buffer->used += size;
