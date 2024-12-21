@@ -1,13 +1,13 @@
 #include "proto_ops.h"
 #include <stdio.h>
-#include "system.h"'
+#include "system.h"
 
 #ifndef __USE_MISC
 #define __USE_MISC
 #endif
 #include <arpa/inet.h>
 #ifdef OS_LINUX
-#	include <netinet/ether.h> // for `ether_ntoa`
+#	include <netinet/ether.h>
 #endif
 #include <netinet/if_ether.h>
 
@@ -114,8 +114,14 @@ int sniff_arp_fromwire(const byte *packet, size_t length) {
 	uint16_t arppro = ntohs(header->arp_pro);
 	uint16_t arpop = ntohs(header->arp_op);
 
-	char arp_tha_as_str[INET_ADDRSTRLEN];
-	utils_in_addr_to_str(arp_tha_as_str, sizeof(arp_tha_as_str), (struct in_addr *)&header->arp_spa);
+	char arp_sha_as_str[18];
+	utils_ether_addr_to_str(arp_sha_as_str, sizeof(arp_sha_as_str), (struct ether_addr *)&header->arp_sha);
+
+	char arp_spa_as_str[INET_ADDRSTRLEN];
+	utils_in_addr_to_str(arp_spa_as_str, sizeof(arp_spa_as_str), (struct in_addr *)&header->arp_spa);
+
+	char arp_tha_as_str[18];
+	utils_ether_addr_to_str(arp_tha_as_str, sizeof(arp_tha_as_str), (struct ether_addr *)&header->arp_tha);
 
 	char arp_tpa_as_str[INET_ADDRSTRLEN];
 	utils_in_addr_to_str(arp_tpa_as_str, sizeof(arp_tpa_as_str), (struct in_addr *)&header->arp_tpa);
@@ -126,9 +132,9 @@ int sniff_arp_fromwire(const byte *packet, size_t length) {
 	LOG_PRINTF_INDENT(ARP, 2, "hln: %u\n", header->arp_hln); // length of hardware address
 	LOG_PRINTF_INDENT(ARP, 2, "pln: %u\n", header->arp_pln); // length of protocol address
 	LOG_PRINTF_INDENT(ARP, 2, "op : %u [%s]\n", arpop, totext(ARP_ARRAY_OP, arpop));
-	LOG_PRINTF_INDENT(ARP, 2, "sha: %s\n", ether_ntoa((struct ether_addr *)&header->arp_sha)); // sender hardware address
-	LOG_PRINTF_INDENT(ARP, 2, "spa: %s\n", arp_tha_as_str); // sender protocol address
-	LOG_PRINTF_INDENT(ARP, 2, "tha: %s\n", ether_ntoa((struct ether_addr *)&header->arp_tha)); // target hardware address
+	LOG_PRINTF_INDENT(ARP, 2, "sha: %s\n", arp_sha_as_str); // sender hardware address
+	LOG_PRINTF_INDENT(ARP, 2, "spa: %s\n", arp_spa_as_str); // sender protocol address
+	LOG_PRINTF_INDENT(ARP, 2, "tha: %s\n", arp_tha_as_str); // target hardware address
 	LOG_PRINTF_INDENT(ARP, 2, "tpa: %s\n", arp_tpa_as_str); // target protocol address
 	return 0;
 }
