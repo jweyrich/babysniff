@@ -32,6 +32,13 @@ typedef struct dns_rdata_a {
 } dns_rdata_a_t;
 
 //
+// AAAA
+//
+typedef struct dns_rdata_aaaa {
+	uint32_t	address[4]; // Internet address
+} dns_rdata_aaaa_t;
+
+//
 // NS
 //
 typedef struct dns_rdata_ns {
@@ -107,6 +114,7 @@ typedef struct dns_rr {
 	uint16_t		rdlen; // Length of the RDATA field, in bytes
 	union rdata {
 		dns_rdata_a_t			a;
+		dns_rdata_aaaa_t		aaaa;
 		dns_rdata_ns_t			ns;
 		dns_rdata_cname_t		cname;
 		dns_rdata_soa_t			soa;

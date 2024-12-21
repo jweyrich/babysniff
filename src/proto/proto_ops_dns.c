@@ -494,6 +494,13 @@ static void print_rr(dns_rr_t *rr) {
 			LOG_PRINTF(DNS, "%s\n", inet_ntoa(*ip_addr));
 			break;
 		}
+		case DNS_TYPE_AAAA:
+		{
+			char ip_as_str[INET6_ADDRSTRLEN] = {0};
+			struct in6_addr *ip_addr = (struct in6_addr *)rr->rdata.aaaa.address;
+			LOG_PRINTF(DNS, "%s\n", inet_ntop(AF_INET6, ip_addr, ip_as_str, sizeof(ip_as_str)));
+			break;
+		}
 		case DNS_TYPE_NS:
 			LOG_PRINTF(DNS, "%s\n", rr->rdata.ns.name);
 			break;
@@ -616,6 +623,15 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 				goto error;
 			// Do NOT swap it
 			//rr->rdata.a.address = ntohl(rr->rdata.a.address);
+			break;
+		}
+		case DNS_TYPE_AAAA:
+		{
+			for (size_t i=0; i<4; i++) {
+				rr->rdata.aaaa.address[i] = buffer_read_uint32(buffer);
+				if (buffer_has_error(buffer))
+					goto error;
+			}
 			break;
 		}
 		case DNS_TYPE_NS:
