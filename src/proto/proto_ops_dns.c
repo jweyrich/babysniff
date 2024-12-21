@@ -620,7 +620,7 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 		rr->ttl = buffer_read_uint32(buffer);
 		rr->rdlen = buffer_read_uint16(buffer);
 		if (buffer_has_error(buffer)) {
-			LOG_WARN("RR rdlen error");
+			LOG_WARN("detected an error in the buffer while reading RR");
 			goto error;
 		}
 		rr->qtype = ntohs(rr->qtype);
@@ -629,15 +629,12 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 		rr->rdlen = ntohs(rr->rdlen);
 	}
 
-	// LOG_DEBUG("name: %s, qtype: %u, qclass: %u, ttl: %u, rdlen: %u",
-	// 	rr->name, rr->qtype, rr->qclass, rr->ttl, rr->rdlen);
-
 	switch (rr->qtype) {
 		case DNS_TYPE_A:
 		{
 			rr->rdata.a.address[0] = buffer_read_uint32(buffer);
 			if (buffer_has_error(buffer)) {
-				LOG_WARN("A address is NULL");
+				LOG_WARN("detected an error in the buffer while reading RR record A");
 				goto error;
 			}
 			break;
@@ -647,7 +644,7 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 			for (size_t i=0; i<4; i++) {
 				rr->rdata.aaaa.address[i] = buffer_read_uint32(buffer);
 				if (buffer_has_error(buffer)) {
-					LOG_WARN("AAAA address is NULL");
+					LOG_WARN("detected an error in the buffer while reading RR record AAAA");
 					goto error;
 				}
 			}
@@ -684,7 +681,7 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 			rr->rdata.soa.expire = buffer_read_int32(buffer);
 			rr->rdata.soa.minimum = buffer_read_uint32(buffer);
 			if (buffer_has_error(buffer)) {
-				LOG_WARN("SOA minimum error");
+				LOG_WARN("detected an error in the buffer while reading RR record SOA");
 				goto error;
 			}
 			rr->rdata.soa.serial = ntohl(rr->rdata.soa.serial);
@@ -703,7 +700,7 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 		case DNS_TYPE_MX:
 			rr->rdata.mx.preference = buffer_read_uint16(buffer);
 			if (buffer_has_error(buffer)) {
-				LOG_WARN("MX preference is NULL");
+				LOG_WARN("detected an error in the buffer while reading RR record MX");
 				goto error;
 			}
 			rr->rdata.mx.exchange = parse_name(buffer);
@@ -739,7 +736,7 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 				goto error;
 			}
 			if (buffer_has_error(buffer)) {
-				LOG_WARN("RRSIG error");
+				LOG_WARN("detected an error in the buffer while reading RR record RRSIG");
 				goto error;
 			}
 			rr->rdata.rrsig.typec = ntohs(rr->rdata.rrsig.typec);
