@@ -71,7 +71,11 @@ int sniff_tcp_fromwire(const byte *packet, size_t length, const config_t *config
 	packet = (byte *)PTR_ADD(packet, header_len);
 	length -= header_len;
 
-//	_asm("int $3");
+	// If there is no data, we can return now
+	if (length == 0) {
+		return 0;
+	}
+
 	if (sport == 53 || dport == 53) {
 		buffer_t buffer = BUFFER_INITIALIZER;
 		size_t dns_len;
