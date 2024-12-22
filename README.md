@@ -1,8 +1,8 @@
 # babysniff
 
-A simple sniffer written from scratch without any libraries.
+A simple network sniffer for Linux and macOS written from scratch without any libraries.
 
-It's a toy tool that I created to learn more about network protocols. It's still very rudimentary when compared to tcpdump or wireshark.
+It's a toy tool that I created to learn more about network protocols. It's rudimentary when compared to tcpdump or wireshark.
 
 ## Supported protocols
 
