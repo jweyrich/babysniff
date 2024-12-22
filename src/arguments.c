@@ -7,24 +7,29 @@
 
 void usage(const cli_args_t *args) {
 	// TODO(jweyrich): Use ANSI escape sequences only when stdout is guaranteed to be a TTY.
-#define BOLD(text)	"\033[1m" text "\033[0m"
-#define UNDER(text)	"\033[4m" text "\033[0m"
-	fprintf(stderr,
-		"Usage: %s [OPTIONS]\n"
+#define BOLD(text) "\033[1m" text "\033[0m"
+#define UNDER(text) "\033[4m" text "\033[0m"
+	const char *usage_format = "Usage: %s [OPTIONS]\n"
 		"  -d #, --debug=#             Set the daemon's debug level.\n"
 		"                              Debugging is more verbose with a higher debug level.\n"
 		"  -f, --foreground            Run the server in the foreground (do not daemonize).\n"
-		"  -F, --filters="UNDER("filter")"        Specify which filters to apply. The supported filters are:\n"
-		"                              arp,dns,dns-data,eth,icmp,ip,tcp,tcp-data,udp,udp-data\n"
-		"                              If not provided, the default is "UNDER("tcp")".\n"
+		"  -F, --filters=" UNDER("filters") "       Specify a list of filters separated by comma. Example: udp,dns\n"
+		"                              The supported filters are:\n"
+		"                                arp\n"
+		"                                dns | dns-data\n"
+		"                                eth\n"
+		"                                icmp\n"
+		"                                ip\n"
+		"                                tcp | tcp-data\n"
+		"                                udp | udp-data\n"
+		"                              If not provided, the default is " UNDER("tcp") ".\n"
 		"  -i, --interface             Specify which interface to inspect.\n"
-		"  -t, --chrootdir="UNDER("directory")"   Chroot to "UNDER("directory")" after processing the command line arguments.\n"
-		"  -u, --user="UNDER("name")"             Change the user to "UNDER("name")" after completing privileged operations, \n"
+		"  -t, --chrootdir=" UNDER("directory") "   Chroot to " UNDER("directory") " after processing the command line arguments.\n"
+		"  -u, --user=" UNDER("name") "             Change the user to " UNDER("name") " after completing privileged operations, \n"
 		"                              such as creating sockets that listen on privileged ports.\n"
 		"  -v, --version               Output version information and exit.\n"
-		"  -h, --help                  Display this help and exit.\n",
-		args->exename
-	);
+		"  -h, --help                  Display this help and exit.\n";
+	fprintf(stderr, usage_format, args->exename);
 #undef UNDER
 #undef BOLD
 }
