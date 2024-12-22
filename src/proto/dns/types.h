@@ -189,25 +189,31 @@ typedef enum {
 	DNS_SECTION_ADDITIONAL	= 4
 } dns_section_e;
 
-// REFERENCE: http://rfc-ref.org/RFC-TEXTS/4034/chapter11.html#d4e447650
+// REFERENCE: https://www.iana.org/assignments/dns-sec-alg-numbers/dns-sec-alg-numbers.xhtml
 typedef enum {
-	// RFC 2537
-	DNSSEC_ALG_RSAMD5				= 1, // RSA/MD5 (NOT RECOMMENDED)
-	// RFC 2539
-	DNSSEC_ALG_DH					= 2, // Diffie-Hellman
-	// RFC 2536
-	DNSSEC_ALG_DSA					= 3, // DSA/SHA-1 (OPTIONAL)
-	// TBA
-	DNSSEC_ALG_ECC					= 4, // Elliptic Curve
-	// RFC 3110
-	DNSSEC_ALG_RSASHA1				= 5, // RSA/SHA-1 (MANDATORY)
-	// RFC 5155
-	DNSSEC_ALG_DSA_NSEC3_SHA1		= 6, // Alias for DNSSEC_ALG_DSA - Don't break NSEC3-unaware resolvers
-	DNSSEC_ALG_RSASHA1_NSEC3_SHA1	= 7, // Alias for DNSSEC_ALG_RSASHA1 - Don't break NSEC3-unaware resolvers
+	DNSSEC_ALG_DELETE				= 0, // RFC 4034, DELETE DS
+	DNSSEC_ALG_RSAMD5				= 1, // RFC 3110, RSA/MD5 (DEPRECATED)
+	DNSSEC_ALG_DH					= 2, // RFC 2539, Diffie-Hellman
+	DNSSEC_ALG_DSA					= 3, // RFC 3755, DSA/SHA-1 (OPTIONAL)
+	DNSSEC_ALG_ECC					= 4, // RFC ???, Elliptic Curve
+	DNSSEC_ALG_RSASHA1				= 5, // RFC 3110, RSA/SHA-1 (MANDATORY)
+	DNSSEC_ALG_DSA_NSEC3_SHA1		= 6, // RFC 5155, DSA/SHA-1 NSEC3
+	DNSSEC_ALG_RSASHA1_NSEC3_SHA1	= 7, // RFC 5155, alias for DNSSEC_ALG_RSASHA1 - Don't break NSEC3-unaware resolvers
+	DNSSEC_ALG_RSASHA256			= 8, // RFC 5702, RSA/SHA-256
+	DNSSEC_ALG_RESERVED_9			= 9,
+	DNSSEC_ALG_RSASHA512			= 10, // RFC 5702, RSA/SHA-512
+	DNSSEC_ALG_RESERVED_11			= 11,
+	DNSSEC_ALG_ECC_GOST			    = 12, // RFC 5933, GOST R 34.10-2001 as per https://datatracker.ietf.org/doc/rfc5933/
+	DNSSEC_ALG_ECDSAP256SHA256		= 13, // RFC 6605, ECDSA Curve P-256 with SHA-256
+	DNSSEC_ALG_ECDSAP384SHA384		= 14, // RFC 6605, ECDSA Curve P-384 with SHA-384
+	DNSSEC_ALG_ED25519				= 15, // RFC 8080, Ed25519
+	DNSSEC_ALG_ED448				= 16, // RFC 8080, Ed448
+	DNSSEC_ALG_SM2SM3				= 17, // RFC 8997, SM2 with SM3
+	DNSSEC_ALG_ECC_GOST12		 	= 23, // RFC 9558, GOST R 34.10-2012
 	// ???
-	DNSSEC_ALG_INDIRECT				= 252, // Indirect
-	DNSSEC_ALG_PRIVATEDNS			= 253, // Private (OPTIONAL)
-	DNSSEC_ALG_PRIVATEOID			= 254 // Private (OPTIONAL)
+	DNSSEC_ALG_INDIRECT				= 252, // RFC 4034, Indirect
+	DNSSEC_ALG_PRIVATEDNS			= 253, // RFC 4034, Private (OPTIONAL)
+	DNSSEC_ALG_PRIVATEOID			= 254 // RFC 4034, Private (OPTIONAL)
 } dnssec_algorithm_e;
 
 // REFERENCE: http://rfc-ref.org/RFC-TEXTS/4034/chapter11.html#d4e448090

@@ -163,15 +163,26 @@ static const pair_array_t dns_array_qclass = {
 };
 
 static const pair_t dnssec_array_algorithm_data[] = {
-	{ DNSSEC_ALG_RSAMD5,		"RSA/MD5" },
-	{ DNSSEC_ALG_DH,			"DH" },
-	{ DNSSEC_ALG_DSA,			"DSA" },
-	{ DNSSEC_ALG_ECC,			"ECC" },
-	{ DNSSEC_ALG_RSASHA1,		"RSA/SHA-1" },
-	{ DNSSEC_ALG_INDIRECT,		"Indirect" },
-	{ DNSSEC_ALG_PRIVATEDNS,	"Private DNS" },
-	{ DNSSEC_ALG_PRIVATEOID,	"Private OID" },
-	{ 0,						"UNKNOWN" }
+	{ DNSSEC_ALG_DELETE, 				"DELETE" },
+	{ DNSSEC_ALG_RSAMD5,				"RSAMD5" },
+	{ DNSSEC_ALG_DH,					"DH" },
+	{ DNSSEC_ALG_DSA, 		    		"DSA" },
+	{ DNSSEC_ALG_ECC,					"ECC" },
+	{ DNSSEC_ALG_RSASHA1,				"RSASHA1" },
+	{ DNSSEC_ALG_DSA_NSEC3_SHA1, 		"DSA-NSEC3-SHA1" },
+	{ DNSSEC_ALG_RSASHA1_NSEC3_SHA1,	"RSASHA1-NSEC3-SHA1" },
+	{ DNSSEC_ALG_RSASHA256, 			"RSASHA256" },
+	{ DNSSEC_ALG_RSASHA512, 			"RSASHA512" },
+	{ DNSSEC_ALG_ECC_GOST,				"ECC-GOST" },
+	{ DNSSEC_ALG_ECDSAP256SHA256,		"ECDSAP256SHA256" },
+	{ DNSSEC_ALG_ECDSAP384SHA384,		"ECDSAP384SHA384" },
+	{ DNSSEC_ALG_ED25519, 				"ED25519" },
+	{ DNSSEC_ALG_ED448,					"ED448" },
+	{ DNSSEC_ALG_INDIRECT,				"INDIRECT" },
+	{ DNSSEC_ALG_SM2SM3,				"SM2SM3" },
+	{ DNSSEC_ALG_ECC_GOST12,			"ECC-GOST12" },
+	{ DNSSEC_ALG_PRIVATEDNS,			"PRIVATEDNS" },
+	{ DNSSEC_ALG_PRIVATEOID,			"PRIVATEOID" },
 };
 
 static const pair_array_t dnssec_array_algorithm = {
@@ -541,19 +552,15 @@ static void print_rr(dns_rr_t *rr) {
 		{
 			char sig_expiration[15];
 			char sig_inception[15];
-			LOG_PRINTF("%s %s %u %u %s (\n",
+			LOG_PRINTF("%s %s %u %u %s %s %u %s %s\n",
 				totext(DNS_ARRAY_QTYPE, rr->rdata.rrsig.typec),
 				totext(DNSSEC_ARRAY_ALGORITHM, rr->rdata.rrsig.algnum),
 				rr->rdata.rrsig.labels,
 				rr->rdata.rrsig.original_ttl,
-				parse_timestamp(sig_expiration, sizeof(sig_expiration), rr->rdata.rrsig.signature_expiration)
-			);
-			LOG_PRINTF_INDENT_TAB(5, "   %s %u %s\n",
+				parse_timestamp(sig_expiration, sizeof(sig_expiration), rr->rdata.rrsig.signature_expiration),
 				parse_timestamp(sig_inception, sizeof(sig_inception), rr->rdata.rrsig.signature_inception),
 				rr->rdata.rrsig.key_tag,
-				rr->rdata.rrsig.signer_name
-			);
-			LOG_PRINTF_INDENT_TAB(5, "   %s )\n",
+				rr->rdata.rrsig.signer_name,
 				rr->rdata.rrsig.signature
 			);
 			break;
@@ -734,11 +741,12 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 				LOG_WARN("RRSIG signer name is NULL");
 				goto error;
 			}
-			rr->rdata.rrsig.signature = parse_rrsig_signature(buffer);
-			if (rr->rdata.rrsig.signature == NULL) {
-				LOG_WARN("RRSIG signature is NULL");
-				goto error;
-			}
+			// FIXME(jweyrich): parse_rrsig_signature is not working properly.
+			// rr->rdata.rrsig.signature = parse_rrsig_signature(buffer);
+			// if (rr->rdata.rrsig.signature == NULL) {
+			// 	LOG_WARN("RRSIG signature is NULL");
+			// 	goto error;
+			// }
 			rr->rdata.rrsig.typec = ntohs(rr->rdata.rrsig.typec);
 			rr->rdata.rrsig.original_ttl = ntohl(rr->rdata.rrsig.original_ttl);
 			rr->rdata.rrsig.signature_expiration = ntohl(rr->rdata.rrsig.signature_expiration);

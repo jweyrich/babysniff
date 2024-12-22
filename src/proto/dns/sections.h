@@ -91,7 +91,7 @@ typedef struct dns_rdata_txt {
 //
 // RRSIG
 //
-// REFERENCE: http://rfc-ref.org/RFC-TEXTS/4034/chapter3.html
+// REFERENCE: https://datatracker.ietf.org/doc/html/rfc4034#section-3.1
 typedef struct dnssec_rrsig {
 	uint16_t	typec;	// Type covered
 	uint8_t		algnum; // Algorithm number
