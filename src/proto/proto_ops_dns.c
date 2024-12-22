@@ -725,18 +725,18 @@ static dns_rr_t *parse_rr(buffer_t *buffer) {
 			rr->rdata.rrsig.signature_expiration = buffer_read_uint32(buffer);
 			rr->rdata.rrsig.signature_inception = buffer_read_uint32(buffer);
 			rr->rdata.rrsig.key_tag = buffer_read_uint16(buffer);
+			if (buffer_has_error(buffer)) {
+				LOG_WARN("detected an error in the buffer while reading RR record RRSIG");
+				goto error;
+			}
 			rr->rdata.rrsig.signer_name = parse_name(buffer);
 			if (rr->rdata.rrsig.signer_name == NULL) {
-				LOG_WARN("TXT data is NULL");
+				LOG_WARN("RRSIG signer name is NULL");
 				goto error;
 			}
 			rr->rdata.rrsig.signature = parse_rrsig_signature(buffer);
 			if (rr->rdata.rrsig.signature == NULL) {
 				LOG_WARN("RRSIG signature is NULL");
-				goto error;
-			}
-			if (buffer_has_error(buffer)) {
-				LOG_WARN("detected an error in the buffer while reading RR record RRSIG");
 				goto error;
 			}
 			rr->rdata.rrsig.typec = ntohs(rr->rdata.rrsig.typec);
