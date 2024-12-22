@@ -63,19 +63,6 @@ static int config_parse_filters_flag(config_t *config, const cli_args_t *args) {
 			}
 			token = strtok(NULL, ",");
 		}
-
-		// If the dns-data filter is set, the dns filter must also be set
-		if (config->filters_flag.dns_data) {
-			config->filters_flag.dns = true;
-		}
-		// If the tcp-data filter is set, the tcp filter must also be set
-		if (config->filters_flag.tcp_data) {
-			config->filters_flag.tcp = true;
-		}
-		// If the udp-data filter is set, the udp filter must also be set
-		if (config->filters_flag.udp_data) {
-			config->filters_flag.udp = true;
-		}
 	}
 	return 0;
 }
