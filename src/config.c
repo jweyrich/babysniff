@@ -19,37 +19,62 @@ static int config_parse_filters_flag(config_t *config, const cli_args_t *args) {
 		return 0;
 	}
 
+	struct filter_flag {
+		const char *name;
+		bool *flag1;
+		bool *flag2;
+	};
+
+	struct filter_flag filters_table[] = {
+		{ "arp"		, &config->filters_flag.arp, NULL },
+		{ "dns"		, &config->filters_flag.dns, NULL },
+		{ "dns-data", &config->filters_flag.dns, &config->filters_flag.dns_data },
+		{ "eth"		, &config->filters_flag.eth, NULL },
+		{ "icmp"	, &config->filters_flag.icmp, NULL },
+		{ "ip"		, &config->filters_flag.ip, NULL },
+		{ "tcp"		, &config->filters_flag.tcp, NULL },
+		{ "tcp-data", &config->filters_flag.tcp, &config->filters_flag.tcp_data },
+		{ "udp"		, &config->filters_flag.udp, NULL },
+		{ "udp-data", &config->filters_flag.udp, &config->filters_flag.udp_data },
+	};
+
+
 	if (args->filters != NULL) {
 		char *token = strtok(args->filters, ",");
 		while (token != NULL) {
-			if (strcmp(token, "arp") == 0) {
-				config->filters_flag.arp = true;
-			} else if (strcmp(token, "dns") == 0) {
-				config->filters_flag.dns = true;
-			} else if (strcmp(token, "dns-data") == 0) {
-				config->filters_flag.dns = true;
-				config->filters_flag.dns_data = true;
-			} else if (strcmp(token, "eth") == 0) {
-				config->filters_flag.eth = true;
-			} else if (strcmp(token, "icmp") == 0) {
-				config->filters_flag.icmp = true;
-			} else if (strcmp(token, "ip") == 0) {
-				config->filters_flag.ip = true;
-			} else if (strcmp(token, "tcp") == 0) {
-				config->filters_flag.tcp = true;
-			} else if (strcmp(token, "tcp-data") == 0) {
-				config->filters_flag.tcp = true;
-				config->filters_flag.tcp_data = true;
-			} else if (strcmp(token, "udp") == 0) {
-				config->filters_flag.udp = true;
-			} else if (strcmp(token, "udp-data") == 0) {
-				config->filters_flag.udp = true;
-				config->filters_flag.udp_data = true;
-			} else {
+			bool is_valid = false;
+			// Find the filter flag in the table and set it to true
+			// If the filter flag is not found, print an error message
+			for (size_t i = 0; i < sizeof(filters_table) / sizeof(filters_table[0]); i++) {
+				if (strcmp(token, filters_table[i].name) == 0) {
+					is_valid = true;
+					if (filters_table[i].flag1 != NULL) {
+						*(filters_table[i].flag1) = true;
+					}
+					if (filters_table[i].flag2 != NULL) {
+						*(filters_table[i].flag2) = true;
+					}
+					break;
+				}
+			}
+			if (!is_valid) {
 				fprintf(stderr, "Invalid filter flag: %s\n", token);
 				return -1;
 			}
 			token = strtok(NULL, ",");
+		}
+
+		// If the dns-data filter is set, the dns filter must also be set
+		if (config->filters_flag.dns_data) {
+			config->filters_flag.dns = true;
+		}
+		// If the tcp-data filter is set, the tcp filter must also be set
+		if (config->filters_flag.tcp_data) {
+			config->filters_flag.tcp = true;
+		}
+		// If the udp-data filter is set, the udp filter must also be set
+		if (config->filters_flag.udp_data) {
+			config->filters_flag.udp = true;
 		}
 	}
 	return 0;
