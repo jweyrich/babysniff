@@ -35,3 +35,7 @@ The superuser privilege is necessary because Linux and BSD systems require eleva
 ```shell
 sudo ./babysniff -f -i eth0 -F arp,icmp,tcp,udp
 ```
+
+## Screenshots
+
+![Screenshot 1](/docs/screenshots/screenshot1.png?raw=true "screenshot 1")
