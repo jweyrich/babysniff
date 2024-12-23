@@ -24,7 +24,7 @@ Layer 7
 ## How to build
 
 ```shell
-cmake build
+cmake .
 make
 ```
 
