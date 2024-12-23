@@ -9,6 +9,7 @@
 #include "daemon.h"
 #include "security.h"
 #include "config.h"
+#include "log.h"
 
 // #ifndef _GNU_SOURCE
 // #define _POSIX_C_SOURCE 2 // POSIX.1, POSIX.2
@@ -51,6 +52,8 @@ int main(int argc, char **argv) {
 	if (parse_arguments(&args, argc, argv) < 0) {
 		return EXIT_FAILURE;
 	}
+
+	log_level_set(args.loglevel);
 
 	if (config_initialize(&config, &args) < 0) {
 		return EXIT_FAILURE;

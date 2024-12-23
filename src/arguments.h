@@ -2,12 +2,13 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "log.h"
 
 typedef struct cli_args {
 	int argc;
 	char **argv;
 	const char *exename;
-	int debuglevel;
+	int loglevel;
 	bool foreground;
 	char *filters;
 	char *interface_name;

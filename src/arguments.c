@@ -10,7 +10,7 @@ void usage(const cli_args_t *args) {
 #define BOLD(text) "\033[1m" text "\033[0m"
 #define UNDER(text) "\033[4m" text "\033[0m"
 	const char *usage_format = "Usage: %s [OPTIONS]\n"
-		"  -d #, --debug=#             Set the daemon's debug level.\n"
+		"  -l #, --loglevel=#          Set the daemon's log level.\n"
 		"                              Debugging is more verbose with a higher debug level.\n"
 		"  -f, --foreground            Run the server in the foreground (do not daemonize).\n"
 		"  -F, --filters=" UNDER("filters") "       Specify a list of filters separated by comma. Example: udp,dns\n"
@@ -61,7 +61,7 @@ const char *get_opt_string(const struct option *options) {
 
 int parse_arguments(cli_args_t *args, int argc, char **argv) {
 	static const struct option options[] = {
-		{ "debug",		required_argument,	NULL, 'd' },
+		{ "loglevel",	required_argument,	NULL, 'l' },
 		{ "foreground",	no_argument,		NULL, 'f' },
 		{ "filter",		required_argument,	NULL, 'F' },
 		{ "interface",  required_argument,  NULL, 'i' },
@@ -82,7 +82,7 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 		if (opt == -1)
 			break;
 		switch (opt) {
-			case 'd': args->debuglevel = atoi(optarg); break;
+			case 'l': args->loglevel = atoi(optarg); break;
 			case 'f': args->foreground = true; break;
 			case 'F': args->filters = optarg; break;
 			case 'i': args->interface_name = optarg; break;

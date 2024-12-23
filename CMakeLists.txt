@@ -30,7 +30,7 @@ target_include_directories(babysniff PRIVATE
     ${PROJECT_SOURCE_DIR}/src/types
 )
 
-target_compile_definitions(babysniff PRIVATE _GNU_SOURCE=1 DEBUG)
+target_compile_definitions(babysniff PRIVATE _GNU_SOURCE=1)
 target_compile_options(babysniff PRIVATE -W -Wall -Wextra -std=c99 -pedantic -ggdb3 -O0)
 #target_link_options(babysniff ...)
 
