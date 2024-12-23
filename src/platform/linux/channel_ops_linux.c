@@ -56,8 +56,7 @@ static int linux_set_interface(channel_t *channel, const char *ifname, uint16_t 
 		return -1;
 	}
 
-	if (channel->ifname != NULL)
-		free(channel->ifname);
+	free(channel->ifname);
 	channel->ifname = strdup(ifname);
 	if (channel->ifname == NULL)
 		return -1;
@@ -103,8 +102,7 @@ static int linux_set_buffersize(channel_t *channel, size_t size) {
 		channel->buffer_size = size;
 	}
 	// TODO(jweyrich): better use realloc?
-	if (channel->buffer != NULL)
-		free(channel->buffer);
+	free(channel->buffer);
 	channel->buffer = calloc(channel->buffer_size, sizeof(byte));
 	if (channel->buffer == NULL) {
 		snprintf(channel->errmsg, SNIFF_ERR_BUFSIZE, "calloc(): %s",

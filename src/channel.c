@@ -13,11 +13,13 @@ channel_t *sniff_alloc_channel() {
 }
 
 void sniff_free_channel(channel_t *channel) {
+	if (channel == NULL)
+		return;
+
 	if (channel->fd != -1)
 		close(channel->fd);
-	if (channel->ifname != NULL)
-		free(channel->ifname);
-	if (channel->buffer != NULL)
-		free(channel->buffer);
+
+	free(channel->ifname);
+	free(channel->buffer);
 	free(channel);
 }

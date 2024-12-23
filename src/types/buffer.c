@@ -88,8 +88,9 @@ int buffer_realloc_data(buffer_t *buffer, uint32_t size) {
 }
 
 buffer_t *buffer_free(buffer_t *buffer) {
-    if (buffer->data != NULL)
-        free(buffer->data);
+    if (buffer == NULL)
+        return NULL;
+    free(buffer->data);
     free(buffer);
     return NULL;
 }

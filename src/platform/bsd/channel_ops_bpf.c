@@ -51,8 +51,7 @@ static int bpf_set_interface(channel_t *channel, const char *ifname, uint16_t pr
 		return -1;
 	}
 
-	if (channel->ifname != NULL)
-		free(channel->ifname);
+	free(channel->ifname);
 	channel->ifname = strdup(ifname);
 	if (channel->ifname == NULL)
 		return -1;
@@ -106,8 +105,7 @@ static int bpf_set_buffersize(channel_t *channel, size_t size) {
 		}
 	}
 	// TODO(jweyrich): better to use realloc?
-	if (channel->buffer != NULL)
-		free(channel->buffer);
+	free(channel->buffer);
 	channel->buffer = calloc(channel->buffer_size, sizeof(byte));
 	if (channel->buffer == NULL) {
 		sniff_channel_set_error_msg(channel, "calloc(): %s", sniff_strerror(errno));

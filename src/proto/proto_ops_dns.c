@@ -266,8 +266,6 @@ error:
 }
 
 static void free_name(char *name) {
-	if (name == NULL)
-		return;
 	free(name);
 }
 
