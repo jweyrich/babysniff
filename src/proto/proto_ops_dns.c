@@ -766,20 +766,16 @@ error:
 int sniff_dns_fromwire(const byte *packet, size_t length, const config_t *config) {
 	int result = 0;
 	buffer_t buffer = BUFFER_INITIALIZER;
-	dns_hdr_t *header;
-	int i;
-
 	buffer_set_data(&buffer, (byte *)packet, length);
 
 	if (config->filters_flag.dns) {
 		LOG_PRINTF("-- DNS (%u bytes)\n", buffer_size(&buffer));
 	}
 
-	header = parse_header(&buffer);
+	dns_hdr_t *header = parse_header(&buffer);
 	if (header == NULL) {
 		result = -1;
-	}
-	else {
+	} else {
 		if (config->filters_flag.dns) {
 			print_header(header);
 		}
@@ -787,25 +783,25 @@ int sniff_dns_fromwire(const byte *packet, size_t length, const config_t *config
 
 	if (config->filters_flag.dns) {
 		LOG_PRINTF_INDENT(2, "QUESTION SECTION:\n");
-		for (i=0; result == 0 && i < header->qd_c; i++) {
+		for (uint16_t i=0; result == 0 && i < header->qd_c; i++) {
 			dns_question_t *section = parse_question(&buffer);
 			if (section == NULL) { result = -1; }
 			else { print_question(section); free_question(section); }
 		}
 		LOG_PRINTF_INDENT(2, "ANSWER SECTION:\n");
-		for (i=0; result == 0 && i < header->an_c; i++) {
+		for (uint16_t i=0; result == 0 && i < header->an_c; i++) {
 			dns_rr_t *section = parse_rr(&buffer);
 			if (section == NULL) { result = -1; }
 			else { print_rr(section); free_rr(section); }
 		}
 		LOG_PRINTF_INDENT(2, "AUTHORITY SECTION:\n");
-		for (i=0; result == 0 && i < header->ns_c; i++) {
+		for (uint16_t i=0; result == 0 && i < header->ns_c; i++) {
 			dns_rr_t *section = parse_rr(&buffer);
 			if (section == NULL) { result = -1; }
 			else { print_rr(section); free_rr(section); }
 		}
 		LOG_PRINTF_INDENT(2, "ADDITIONAL SECTION:\n");
-		for (i=0; result == 0 && i < header->ar_c; i++) {
+		for (uint16_t i=0; result == 0 && i < header->ar_c; i++) {
 			dns_rr_t *section = parse_rr(&buffer);
 			if (section == NULL) { result = -1; }
 			else { print_rr(section); free_rr(section); }

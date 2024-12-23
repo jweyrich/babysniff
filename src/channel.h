@@ -42,5 +42,5 @@ typedef struct sniff_channel {
 //
 // Allocation
 //
-channel_t *sniff_alloc_channel();
+channel_t *sniff_alloc_channel(void);
 void sniff_free_channel(channel_t *channel);

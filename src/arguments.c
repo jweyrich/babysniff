@@ -34,7 +34,7 @@ void usage(const cli_args_t *args) {
 #undef BOLD
 }
 
-void showversion() {
+static void showversion(void) {
 	fprintf(stdout, "%s %s - %s\n", PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
 }
 

@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-channel_t *sniff_alloc_channel() {
+channel_t *sniff_alloc_channel(void) {
 	channel_t *channel = malloc(sizeof(channel_t));
 	if (channel == NULL)
 		return NULL;
