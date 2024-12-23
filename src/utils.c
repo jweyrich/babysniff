@@ -12,7 +12,7 @@
 
 
 char *utils_ether_addr_to_str(char *output, size_t output_size, const struct ether_addr *input) {
-	if (output_size < ETH_ALEN * 3) { // Minimum size is 18 bytes including the null terminator
+	if (output_size < ETHER_ADDR_LEN * 3) { // Minimum size is 18 bytes including the null terminator
         return NULL;
     }
 	const unsigned char *buffer = input->ether_addr_octet;
