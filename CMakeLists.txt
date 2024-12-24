@@ -31,12 +31,12 @@ target_include_directories(babysniff PRIVATE
 )
 
 target_compile_definitions(babysniff PRIVATE _GNU_SOURCE=1)
-target_compile_options(babysniff PRIVATE -W -Wall -Wextra -std=c99 -pedantic -ggdb3 -O0)
+target_compile_options(babysniff PRIVATE -W -Wall -Wextra -std=c17 -pedantic -ggdb3 -O0)
 #target_link_options(babysniff ...)
 
 set_target_properties(babysniff
     PROPERTIES
-        C_STANDARD 11
+        C_STANDARD 17
         C_STANDARD_REQUIRED YES
         C_EXTENSIONS NO
 )
