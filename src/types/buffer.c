@@ -17,7 +17,7 @@ static int buffer_safe_size(buffer_t *buffer, uint32_t offset) {
     return 1;
 }
 
-static int buffer_safe_offset(buffer_t *buffer, uint32_t offset) {
+static int buffer_safe_offset(buffer_t *buffer, int offset) {
     uint32_t cur_size = buffer->size;
     if (offset >= cur_size) {
         buffer->error.code = BUFFER_EOVERFLOW;
@@ -25,13 +25,12 @@ static int buffer_safe_offset(buffer_t *buffer, uint32_t offset) {
         LOG_WARN("Attempt to access an invalid offset (buffer=%p size=%u offset=%u)",
             buffer, buffer->size, offset);
         return 0;
+    } else if (offset < 0) {
+        buffer->error.code = BUFFER_EUNDERFLOW;
+        LOG_WARN("Attempt to access an invalid offset (buffer=%p size=%u offset=%d)",
+            buffer, buffer->size, offset);
+        return 0;
     }
-    // if (offset < 0) {
-    //     buffer->error.code = BUFFER_EUNDERFLOW;
-    //     LOG_WARN("Attempt to access an invalid offset (buffer=%p size=%u offset=%d)",
-    //         buffer, buffer->size, offset);
-    //     return 0;
-    // }
     return 1;
 }
 
@@ -153,6 +152,16 @@ uint32_t buffer_seek(buffer_t *buffer, uint32_t offset) {
     return offset;
 }
 
+/**
+ * @brief
+ * Skip _offset_ bytes from the current position.
+ * If _offset_ is negative, it will rewind the buffer.
+ * If the _offset_ is not reachable, it will return 0.
+ *
+ * @param buffer    The buffer to skip
+ * @param offset    The number of bytes to skip
+ * @return uint32_t The absolute number of bytes skipped, otherwise 0.
+ */
 uint32_t buffer_skip(buffer_t *buffer, int offset) {
     if (offset == 0)
         return 0;
