@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "log_level.h"
 #include "version.h"
 
 void usage(const cli_args_t *args) {
@@ -82,7 +83,10 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 		if (opt == -1)
 			break;
 		switch (opt) {
-			case 'l': args->loglevel = atoi(optarg); break;
+			case 'l':
+				args->loglevel = atoi(optarg);
+				log_level_set(args->loglevel);
+				break;
 			case 'f': args->foreground = true; break;
 			case 'F': args->filters = optarg; break;
 			case 'i': args->interface_name = optarg; break;

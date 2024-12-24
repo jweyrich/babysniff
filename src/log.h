@@ -16,20 +16,8 @@
 #pragma once
 
 #include "variadic.h"
+#include "log_level.h"
 #include <stdbool.h>
-
-typedef enum {
-	LOGLEVEL_FATAL = 0,
-	LOGLEVEL_ERROR, // default log level
-	LOGLEVEL_WARN,
-	LOGLEVEL_INFO,
-	LOGLEVEL_DEBUG,
-	LOGLEVEL_TRACE,
-} loglevel_e;
-
-bool log_level_is_valid(int level);
-void log_level_set(int level);
-const char *log_level_name(loglevel_e level);
 
 #define LOG_PASTE2(_0,_1)					_0 ## _1
 #define LOG_ARG16(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,...)	_15
@@ -82,5 +70,5 @@ void log_printf_narg_1(const char *format);
 void log_printf_narg_2(const char *format, ...);
 void log_printf_indent_narg_3(int indent, const char *indentstr, const char *format);
 void log_printf_indent_narg_4(int indent, const char *indentstr, const char *format, ...);
-void log_printf_level_narg_4(const char *file, int line, loglevel_e level, const char *format);
-void log_printf_level_narg_5(const char *file, int line, loglevel_e level, const char *format, ...);
+void log_printf_level_narg_4(const char *file, int line, log_level_e level, const char *format);
+void log_printf_level_narg_5(const char *file, int line, log_level_e level, const char *format, ...);

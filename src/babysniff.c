@@ -53,8 +53,6 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	log_level_set(args.loglevel);
-
 	if (config_initialize(&config, &args) < 0) {
 		return EXIT_FAILURE;
 	}
