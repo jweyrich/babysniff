@@ -111,18 +111,18 @@ inline void buffer_clear_error(buffer_t *buffer) {
     buffer->error.code = BUFFER_NOERROR;
 }
 
-inline void buffer_set_data(buffer_t *buffer, byte *data, uint32_t size) {
+inline void buffer_set_data(buffer_t *buffer, uint8_t *data, uint32_t size) {
     buffer->data = data;
     buffer->size = size;
     buffer->used = size;
     buffer->current = 0;
 }
 
-inline byte *buffer_data(const buffer_t *buffer) {
+inline uint8_t *buffer_data(const buffer_t *buffer) {
     return buffer->data;
 }
 
-inline byte *buffer_data_ptr(const buffer_t *buffer) {
+inline uint8_t *buffer_data_ptr(const buffer_t *buffer) {
     return buffer->data + buffer->current;
 }
 
@@ -171,8 +171,8 @@ uint32_t buffer_remaining(const buffer_t *buffer) {
     return buffer->size - buffer->current;
 }
 
-int buffer_read(buffer_t *buffer, byte *output, size_t size) {
-    byte *data = buffer_data_ptr(buffer);
+int buffer_read(buffer_t *buffer, uint8_t *output, size_t size) {
+    uint8_t *data = buffer_data_ptr(buffer);
     if (!buffer_safe_size(buffer, size))
         return 0;
     memcpy(output, (const void*)data, size);
@@ -180,12 +180,12 @@ int buffer_read(buffer_t *buffer, byte *output, size_t size) {
     return size;
 }
 
-byte buffer_read_byte(buffer_t *buffer) {
+uint8_t buffer_read_byte(buffer_t *buffer) {
     if (!buffer_safe_size(buffer, 1))
         return 0;
-    byte *data = buffer_data_ptr(buffer);
+    uint8_t *data = buffer_data_ptr(buffer);
     buffer->current += 1;
-    byte output = ((byte)data[0]);
+    uint8_t output = ((uint8_t)data[0]);
     return output;
 }
 
@@ -196,7 +196,7 @@ inline int8_t buffer_read_int8(buffer_t *buffer) {
 int16_t buffer_read_int16(buffer_t *buffer) {
     if (!buffer_safe_size(buffer, 2))
         return 0;
-    byte *data = buffer_data_ptr(buffer);
+    uint8_t *data = buffer_data_ptr(buffer);
     buffer->current += 2;
     int16_t output = ((int16_t)data[1]) << 8;
     output |= ((int16_t)data[0]);
@@ -206,7 +206,7 @@ int16_t buffer_read_int16(buffer_t *buffer) {
 int32_t buffer_read_int32(buffer_t *buffer) {
     if (!buffer_safe_size(buffer, 4))
         return 0;
-    byte *data = buffer_data_ptr(buffer);
+    uint8_t *data = buffer_data_ptr(buffer);
     buffer->current += 4;
     int32_t output = ((int32_t)data[3]) << 24;
     output |= ((int32_t)data[2]) << 16;
@@ -218,7 +218,7 @@ int32_t buffer_read_int32(buffer_t *buffer) {
 int64_t buffer_read_int64(buffer_t *buffer) {
     if (!buffer_safe_size(buffer, 8))
         return 0;
-    byte *data = buffer_data_ptr(buffer);
+    uint8_t *data = buffer_data_ptr(buffer);
     buffer->current += 8;
     int64_t output = ((int64_t)data[7]) << 56;
     output |= ((int64_t)data[6]) << 48;
@@ -273,8 +273,8 @@ char *buffer_strndup(buffer_t *buffer, size_t size) {
     return copy;
 }
 
-int buffer_write(buffer_t *buffer, const byte *input, size_t size) {
-    byte *data = buffer_data_ptr(buffer);
+int buffer_write(buffer_t *buffer, const uint8_t *input, size_t size) {
+    uint8_t *data = buffer_data_ptr(buffer);
     if (!buffer_safe_size(buffer, size))
         return 0;
     memcpy(data, input, size);
@@ -283,9 +283,9 @@ int buffer_write(buffer_t *buffer, const byte *input, size_t size) {
     return size;
 }
 
-void buffer_write_byte(buffer_t *buffer, byte input) {
+void buffer_write_byte(buffer_t *buffer, uint8_t input) {
     // TODO(jweyrich): rewrite this like the read functions
-    byte *data = buffer_data_ptr(buffer);
+    uint8_t *data = buffer_data_ptr(buffer);
     if (!buffer_safe_size(buffer, 1))
         return;
     *data = input & 0xff;
@@ -329,7 +329,7 @@ inline void buffer_write_uint64(buffer_t *buffer, uint64_t input) {
 }
 
 void buffer_write_string(buffer_t *buffer, const char *input) {
-    byte *data = buffer_data_ptr(buffer);
+    uint8_t *data = buffer_data_ptr(buffer);
     size_t size = strlen(input) + 1; // length + \0
     if (!buffer_safe_size(buffer, size))
         return;
@@ -339,7 +339,7 @@ void buffer_write_string(buffer_t *buffer, const char *input) {
 }
 
 int buffer_write_format(buffer_t *buffer, const char *format, ...) {
-    byte *data = buffer_data_ptr(buffer);
+    uint8_t *data = buffer_data_ptr(buffer);
     int length = buffer_left(buffer);
     va_list ap;
     va_start(ap, format);

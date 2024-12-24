@@ -14,7 +14,7 @@
 
 #define UDP_HDR_LEN 8
 
-int sniff_udp_fromwire(const byte *packet, size_t length, const config_t *config) {
+int sniff_udp_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	const struct udphdr *header = (struct udphdr *)packet;
 	uint16_t sport = ntohs(header->uh_sport);
 	uint16_t dport = ntohs(header->uh_dport);
@@ -27,7 +27,7 @@ int sniff_udp_fromwire(const byte *packet, size_t length, const config_t *config
 		LOG_PRINTF_INDENT(2,  "\tsum  : %u\n", header->uh_sum); // udp checksum
 	}
 
-	packet = (byte *)PTR_ADD(packet, UDP_HDR_LEN);
+	packet = (uint8_t *)PTR_ADD(packet, UDP_HDR_LEN);
 	length = ntohs(header->uh_ulen) - UDP_HDR_LEN;
 
 	// If there is no data, we can return now

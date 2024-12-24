@@ -18,7 +18,7 @@
 // http://64.233.163.132/search?q=cache:IxxD7kq2CAAJ:www.w00w00.org/files/sectools/fragrouter/print.c+IP_OFFMASK&cd=1&hl=en&ct=clnk
 // TODO(jweyrich): linux uses struct iphdr
 
-int sniff_ip_fromwire(const byte *packet, size_t length, const config_t *config) {
+int sniff_ip_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	int result = 0;
 	const struct ip *header = (struct ip *)packet;
 	uint16_t header_len = header->ip_hl << 2;
@@ -63,7 +63,7 @@ int sniff_ip_fromwire(const byte *packet, size_t length, const config_t *config)
 		return -1;
 	}
 
-	packet = (byte *)PTR_ADD(header, header_len);
+	packet = (uint8_t *)PTR_ADD(header, header_len);
 	length -= header_len;
 
 	switch (header->ip_p) {

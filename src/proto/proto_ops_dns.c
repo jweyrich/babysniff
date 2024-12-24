@@ -392,7 +392,7 @@ static char *parse_rrsig_signature(buffer_t *buffer) {
 	//M+5jGt0Xd5+fnvfyCNG7v7quzJ6p5sABjWVz0L/kUyN0erX4eNzpzFiofiRFnYkwAaibP+GcW/kB/ibots9e4sPhHvPWZs/01kgVgust9VN7nOiPON8dMkCJPPOrsz1SfcDqBj3ES5wNT/C2bTle4QOgv9z9XKdcNtlyeWmBW0h9Co+SMutYHpHoiBCKhcgI
 	// TODO(jweyrich): What's the real size? 128 or 144? Is it constant?
 	const size_t input_size = 128; // RSA/SHA-1
-	byte signature[input_size];
+	uint8_t signature[input_size];
 	int read = buffer_read(buffer, signature, input_size);
 	if (read == 0)
 		return NULL;
@@ -763,10 +763,10 @@ error:
 	return NULL;
 }
 
-int sniff_dns_fromwire(const byte *packet, size_t length, const config_t *config) {
+int sniff_dns_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	int result = 0;
 	buffer_t buffer = BUFFER_INITIALIZER;
-	buffer_set_data(&buffer, (byte *)packet, length);
+	buffer_set_data(&buffer, (uint8_t *)packet, length);
 
 	if (config->filters_flag.dns) {
 		LOG_PRINTF("-- DNS (%u bytes)\n", buffer_size(&buffer));
@@ -810,7 +810,7 @@ int sniff_dns_fromwire(const byte *packet, size_t length, const config_t *config
 
 	free_header(header);
 
-//	packet = (byte *)PTR_ADD(packet, DNS_HDR_LEN);
+//	packet = (uint8_t *)PTR_ADD(packet, DNS_HDR_LEN);
 //	length -= DNS_HDR_LEN;
 	if (config->filters_flag.dns_data) {
 		LOG_PRINTF("showing %lu bytes:\n", length);

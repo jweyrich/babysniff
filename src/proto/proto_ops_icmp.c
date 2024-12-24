@@ -12,7 +12,7 @@
 #include "log.h"
 #include "utils.h"
 
-int sniff_icmp_fromwire(const byte *packet, size_t length, const config_t *config) {
+int sniff_icmp_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	const struct icmp *header = (struct icmp *)packet;
 
 	if (config->filters_flag.icmp) {

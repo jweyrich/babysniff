@@ -1,13 +1,13 @@
 #pragma once
 
-#include "types.h"
+#include <stdint.h>
 #include <stddef.h>
 
 //
 // Types
 //
 typedef struct buffer {
-    byte *   data;
+    uint8_t *data;
     uint32_t size;
     uint32_t used;
     uint32_t current;
@@ -58,7 +58,7 @@ void buffer_clear_error(buffer_t *buffer);
 //
 // ...
 //
-byte *buffer_data_ptr(const buffer_t *buffer);
+uint8_t *buffer_data_ptr(const buffer_t *buffer);
 // TODO(jweyrich): create int buffer_search(input, size)
 // TODO(jweyrich): create int buffer_compare(input, size)
 
@@ -66,8 +66,8 @@ byte *buffer_data_ptr(const buffer_t *buffer);
 //
 // Properties
 //
-void buffer_set_data(buffer_t *buffer, byte *data, uint32_t size);
-byte *buffer_data(const buffer_t *buffer);
+void buffer_set_data(buffer_t *buffer, uint8_t *data, uint32_t size);
+uint8_t *buffer_data(const buffer_t *buffer);
 uint32_t buffer_size(const buffer_t *buffer);
 uint32_t buffer_used(const buffer_t *buffer);
 void buffer_clear(buffer_t *buffer);
@@ -85,8 +85,8 @@ uint32_t buffer_remaining(const buffer_t *buffer);
 //
 // Reading (from network-byte-order to host-byte-order)
 //
-int buffer_read(buffer_t *buffer, byte *output, size_t size);
-byte buffer_read_byte(buffer_t *buffer);
+int buffer_read(buffer_t *buffer, uint8_t *output, size_t size);
+uint8_t buffer_read_byte(buffer_t *buffer);
 int8_t buffer_read_int8(buffer_t *buffer);
 int16_t buffer_read_int16(buffer_t *buffer);
 int32_t buffer_read_int32(buffer_t *buffer);
@@ -103,8 +103,8 @@ char *buffer_strndup(buffer_t *buffer, size_t size);
 // Writing (from host-byte-order to network-byte-order)
 //
 // TODO(jweyrich): how to deal with _used_ on writing operations?
-int buffer_write(buffer_t *buffer, const byte *input, size_t size);
-void buffer_write_byte(buffer_t *buffer, byte input);
+int buffer_write(buffer_t *buffer, const uint8_t *input, size_t size);
+void buffer_write_byte(buffer_t *buffer, uint8_t input);
 void buffer_write_int8(buffer_t *buffer, int8_t input);
 void buffer_write_int16(buffer_t *buffer, int16_t input);
 void buffer_write_int32(buffer_t *buffer, int32_t input);

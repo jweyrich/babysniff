@@ -108,7 +108,7 @@ static int fromtext(arp_array_e type, const char *value) {
 	return result == NULL ? pair_array_last(array)->key : result->key;
 }
 
-int sniff_arp_fromwire(const byte *packet, size_t length, const config_t *config) {
+int sniff_arp_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	const struct ether_arp *header = (struct ether_arp *)packet;
 	uint16_t arphrd = ntohs(header->arp_hrd);
 	uint16_t arppro = ntohs(header->arp_pro);

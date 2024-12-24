@@ -27,7 +27,6 @@
 #include <time.h>
 #include <unistd.h>
 #include "log.h"
-#include "types.h"
 #include "config.h"
 
 static int linux_ensure_version(channel_t *channel) {
@@ -103,7 +102,7 @@ static int linux_set_buffersize(channel_t *channel, size_t size) {
 	}
 	// TODO(jweyrich): better use realloc?
 	free(channel->buffer);
-	channel->buffer = calloc(channel->buffer_size, sizeof(byte));
+	channel->buffer = calloc(channel->buffer_size, sizeof(uint8_t));
 	if (channel->buffer == NULL) {
 		snprintf(channel->errmsg, SNIFF_ERR_BUFSIZE, "calloc(): %s",
 			sniff_strerror(errno));
@@ -155,7 +154,7 @@ void sniff_close(channel_t *channel) {
 }
 
 int sniff_readloop(channel_t *channel, long timeout, const config_t *config) {
-	byte *begin, *end, *current;
+	uint8_t *begin, *end, *current;
 	struct sockaddr packet_info;
 	size_t packet_info_size = sizeof(struct sockaddr_ll);
 	//struct eth_hdr *header;

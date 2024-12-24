@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #include <stdlib.h>
 #include "common.h"
 #include "channel.h"
@@ -12,7 +13,7 @@ struct sniff_channel_ops {
 	channel_t *(*open)(const char *ifname, int promisc, size_t buffer_size);
 	void (*close)(channel_t *channel);
 	int (*read)(channel_t *channel, long timeout);
-	int (*write)(channel_t *channel, const byte *data, size_t length);
+	int (*write)(channel_t *channel, const uint8_t *data, size_t length);
 	int (*setnonblock)(channel_t *channel, int nonblock);
 };
 

@@ -8,7 +8,7 @@ void print_bits(FILE *stream, uint64_t value, size_t size) {
         fputc((value & (1 << i)) == 0 ? '0' : '1', stream);
 }
 
-void dump_hex(FILE *stream, const byte *data, size_t size, uint32_t offset) {
+void dump_hex(FILE *stream, const uint8_t *data, size_t size, uint32_t offset) {
     int ch;
     uint32_t i, j, cols;
 

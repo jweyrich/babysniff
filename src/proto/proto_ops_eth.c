@@ -16,7 +16,7 @@
 #include "macros.h"
 
 // TODO(jweyrich): linux uses struct ethhdr
-int sniff_eth_fromwire(const byte *packet, size_t length, const config_t *config) {
+int sniff_eth_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	int result = 0;
 	const struct ether_header *header = (struct ether_header *)packet;
 	uint16_t type = ntohs(header->ether_type);
@@ -46,7 +46,7 @@ int sniff_eth_fromwire(const byte *packet, size_t length, const config_t *config
 			LOG_PRINTF_INDENT(2, "\ttype : 0x%x\n", type);
 	}
 
-	packet = (byte *)PTR_ADD(header, header_len);
+	packet = (uint8_t *)PTR_ADD(header, header_len);
 	length -= header_len;
 
 	switch (type) {

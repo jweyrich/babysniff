@@ -3,7 +3,7 @@
 #include <net/ethernet.h>
 #include <netinet/ip.h>
 
-int sniff_packet_fromwire(const byte *packet, size_t length, int protocol, const config_t *config) {
+int sniff_packet_fromwire(const uint8_t *packet, size_t length, int protocol, const config_t *config) {
 	int result = 0;
 	switch (protocol) {
 		case 0:

@@ -1,8 +1,8 @@
 #pragma once
 
+#include <stdint.h>
 #include <string.h>
 #include "common.h"
-#include "types.h"
 
 #define SNIFF_DEFAULT_BUFSIZE 4096 // TODO(jweyrich): move it to a per-strategy basis
 #define SNIFF_ERR_BUFSIZE 255
@@ -18,7 +18,7 @@ typedef struct sniff_channel {
 	int fd;
 	char *ifname; // interface name
 	size_t buffer_size; // read buffer size
-	byte *buffer; // read buffer
+	uint8_t *buffer; // read buffer
 	char errmsg[SNIFF_ERR_BUFSIZE];
 	sniff_channel_opts_t opts;
 } channel_t;

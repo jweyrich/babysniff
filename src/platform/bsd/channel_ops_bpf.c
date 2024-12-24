@@ -106,7 +106,7 @@ static int bpf_set_buffersize(channel_t *channel, size_t size) {
 	}
 	// TODO(jweyrich): better to use realloc?
 	free(channel->buffer);
-	channel->buffer = calloc(channel->buffer_size, sizeof(byte));
+	channel->buffer = calloc(channel->buffer_size, sizeof(uint8_t));
 	if (channel->buffer == NULL) {
 		sniff_channel_set_error_msg(channel, "calloc(): %s", sniff_strerror(errno));
 		return -1;
@@ -166,7 +166,7 @@ void sniff_close(channel_t *channel) {
 }
 
 int sniff_readloop(channel_t *channel, long timeout, const config_t *config) {
-	byte *begin, *end, *current;
+	uint8_t *begin, *end, *current;
 	struct bpf_hdr *header;
 	ssize_t bytes_read;
 	time_t time_start, time_elapsed;

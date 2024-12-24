@@ -14,7 +14,7 @@
 #include "log.h"
 #include "system.h"
 
-static const char *flags_totext(byte value) {
+static const char *flags_totext(uint8_t value) {
 	static char text[8 * 4]; // # of flags * length with separator
 	char *ptr = text;
 	int has_prev = 0;
@@ -38,7 +38,7 @@ static const char *flags_totext(byte value) {
 	return text;
 }
 
-int sniff_tcp_fromwire(const byte *packet, size_t length, const config_t *config) {
+int sniff_tcp_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	const struct tcphdr *header = (struct tcphdr *)packet;
 	uint16_t header_len = header->th_off * 4;
 
@@ -68,7 +68,7 @@ int sniff_tcp_fromwire(const byte *packet, size_t length, const config_t *config
 		LOG_PRINTF_INDENT(2, "\turp  : %u\n", ntohs(header->th_urp)); // urgent pointer
 	}
 
-	packet = (byte *)PTR_ADD(packet, header_len);
+	packet = (uint8_t *)PTR_ADD(packet, header_len);
 	length -= header_len;
 
 	// If there is no data, we can return now
@@ -79,7 +79,7 @@ int sniff_tcp_fromwire(const byte *packet, size_t length, const config_t *config
 	if (sport == 53 || dport == 53) {
 		buffer_t buffer = BUFFER_INITIALIZER;
 		size_t dns_len;
-		buffer_set_data(&buffer, (byte *)packet, length);
+		buffer_set_data(&buffer, (uint8_t *)packet, length);
 		dns_len = buffer_read_uint16(&buffer);
 		dns_len = ntohs(dns_len);
 		if (!buffer_has_error(&buffer)) {

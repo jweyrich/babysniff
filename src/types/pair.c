@@ -1,5 +1,4 @@
 #include "types/pair.h"
-#include "types.h"
 #include <string.h>
 
 pair_t *pair_array_first(const pair_array_t *array) {

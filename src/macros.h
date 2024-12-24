@@ -1,6 +1,7 @@
 #pragma once
 
-#include "types.h"
+#include <stddef.h> // for ptrdiff_t
+#include <stdint.h> // for uintptr_t
 
 // The void() here guarantees the global comma operator will be
 // invoked instead of a possible overload defined by X's type.
