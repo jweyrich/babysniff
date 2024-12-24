@@ -402,7 +402,7 @@ static char *parse_rrsig_signature(buffer_t *buffer) {
 	if (encoded == NULL)
 		return NULL;
 	base64_encode(encoded, encoded_size, signature, input_size);
-	printf("input_size = %zu, encoded_size = %zu, result_size = %zu\n", input_size, encoded_size, strlen(encoded));
+	LOG_DEBUG("input_size = %zu, encoded_size = %zu, result_size = %zu\n", input_size, encoded_size, strlen(encoded));
 	return encoded;
 }
 

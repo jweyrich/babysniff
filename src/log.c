@@ -34,7 +34,30 @@ const char *log_level_name(loglevel_e level) {
     return level_name[level];
 }
 
-void log_level_4(const char *file, int line, loglevel_e level, const char *format) {
+void log_printf_narg_1(const char *format) {
+    printf("%s", format);
+}
+
+void log_printf_narg_2(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+}
+
+void log_printf_indent_narg_3(int indent, const char *indentstr, const char *format) {
+    printf("%*s%s", indent, indentstr, format);
+}
+
+void log_printf_indent_narg_4(int indent, const char *indentstr, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    printf("%*s", indent, indentstr);
+    vprintf(format, args);
+    va_end(args);
+}
+
+void log_printf_level_narg_4(const char *file, int line, loglevel_e level, const char *format) {
     if (level > g_loglevel) {
         return;
     }
@@ -42,7 +65,7 @@ void log_level_4(const char *file, int line, loglevel_e level, const char *forma
     printf("%s %s:%d %s\n", level_name, file, line, format);
 }
 
-void log_level_5(const char *file, int line, loglevel_e level, const char *format, ...) {
+void log_printf_level_narg_5(const char *file, int line, loglevel_e level, const char *format, ...) {
     if (level > g_loglevel) {
         return;
     }
@@ -52,28 +75,5 @@ void log_level_5(const char *file, int line, loglevel_e level, const char *forma
     printf("%s %s:%d ", level_name, file, line);
     vprintf(format, args);
     printf("\n");
-    va_end(args);
-}
-
-void log_printf_1(const char *format) {
-    printf("%s", format);
-}
-
-void log_printf_2(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
-}
-
-void log_printf_indent_3(int indent, const char *indentstr, const char *format) {
-    printf("%*s%s", indent, indentstr, format);
-}
-
-void log_printf_indent_4(int indent, const char *indentstr, const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    printf("%*s", indent, indentstr);
-    vprintf(format, args);
     va_end(args);
 }
