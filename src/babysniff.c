@@ -9,7 +9,6 @@
 #include "daemon.h"
 #include "security.h"
 #include "config.h"
-#include "log.h"
 
 // #ifndef _GNU_SOURCE
 // #define _POSIX_C_SOURCE 2 // POSIX.1, POSIX.2
