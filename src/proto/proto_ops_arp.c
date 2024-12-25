@@ -1,20 +1,15 @@
+#include "config.h"
+#include "log.h"
 #include "proto_ops.h"
-#include <stdio.h>
 #include "system.h"
-
-#ifndef __USE_MISC
-#define __USE_MISC
-#endif
+#include "types/pair.h"
+#include "utils.h"
 #include <arpa/inet.h>
+#include <stdio.h>
 #ifdef OS_LINUX
 #	include <netinet/ether.h>
 #endif
 #include <netinet/if_ether.h>
-
-#include "config.h"
-#include "log.h"
-#include "types/pair.h"
-#include "utils.h"
 
 // TODO(jweyrich): request/responses: http://64.233.163.132/search?q=cache:fTLz8j_w-0YJ:www.few.vu.nl/~cn/arp.c+arp_hln&cd=1&hl=en&ct=clnk
 

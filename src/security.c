@@ -1,10 +1,10 @@
 #include "security.h"
 #include <errno.h>
+#include <pwd.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
-#include <pwd.h>
 #include <unistd.h>
 
 static bool is_empty_string(const char *str) {

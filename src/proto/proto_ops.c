@@ -1,7 +1,7 @@
 #include "proto_ops.h"
-#include <string.h>
 #include <net/ethernet.h>
 #include <netinet/ip.h>
+#include <string.h>
 
 int sniff_packet_fromwire(const uint8_t *packet, size_t length, int protocol, const config_t *config) {
 	int result = 0;

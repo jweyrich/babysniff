@@ -1,8 +1,6 @@
 #include "arrays.h"
-
 #include "proto/dns/dns.h"
 #include "types/pair.h"
-
 #include <stdlib.h>
 #include <string.h>
 

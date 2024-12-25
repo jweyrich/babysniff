@@ -1,17 +1,16 @@
 #include "rr.h"
 #include "alloc.h"
 #include "log.h"
-#include "types/buffer.h"
 #include "proto/dns/arrays.h"
 #include "proto/dns/name.h"
-#include "proto/dns/sections/rdata/rrsig.h"
 #include "proto/dns/sections.h"
+#include "proto/dns/sections/rdata/rrsig.h"
+#include "types/buffer.h"
 #include "utils.h"
+#include <arpa/inet.h> // for ntohs + struct in_addr + in6_addr
 #include <stdlib.h>
 #include <string.h>
 #include <time.h> // for gmtime_r + strftime
-
-#include <arpa/inet.h> // for ntohs + struct in_addr + in6_addr
 
 static char *parse_timestamp(char *out, size_t out_size, time_t in) {
 	struct tm tm;

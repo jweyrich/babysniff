@@ -1,7 +1,7 @@
 #include "log.h"
-#include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 void log_printf_narg_1(const char *format) {
     printf("%s", format);

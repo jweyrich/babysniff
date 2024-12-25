@@ -4,9 +4,9 @@
 #include "proto/dns/dns.h"
 #include "proto/dns/name.h"
 #include "types/buffer.h"
+#include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
 
 dns_question_t *parse_question(buffer_t *buffer) {
 	dns_question_t *question = malloc(sizeof(dns_question_t));

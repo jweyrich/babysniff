@@ -15,8 +15,8 @@
 
 #pragma once
 
-#include "variadic.h"
 #include "log_level.h"
+#include "variadic.h"
 #include <stdbool.h>
 
 #define LOG_PASTE2(_0,_1)					_0 ## _1

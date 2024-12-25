@@ -1,7 +1,7 @@
 #include "config.h"
 #include "arguments.h"
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 /**
  * @brief Parse the filters flag from the command line arguments.

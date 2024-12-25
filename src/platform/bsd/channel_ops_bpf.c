@@ -1,21 +1,20 @@
-#include "channel_ops.h"
 #include "channel_ops_common.h"
-#include "proto_ops.h"
+#include "channel_ops.h"
+#include "config.h"
 #include "log.h"
 #include "macros.h"
-#include "config.h"
-
-#include <stdio.h>
+#include "proto_ops.h"
 #include <errno.h>
+#include <fcntl.h>
+#include <net/bpf.h>
+#include <net/if.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <net/if.h>
-#include <net/bpf.h>
 #include <time.h>
+#include <unistd.h>
 
 // TODO(jweyrich): parse options
 // http://bpf.4.man.smakd.potaroo.net

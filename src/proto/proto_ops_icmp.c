@@ -1,16 +1,11 @@
-#include "proto_ops.h"
-#include <stdio.h>
-
-#ifndef __USE_MISC
-#define __USE_MISC
-#endif
-#include <arpa/inet.h>
-#include <netinet/ip.h>
-#include <netinet/ip_icmp.h>
-
 #include "config.h"
 #include "log.h"
+#include "proto_ops.h"
 #include "utils.h"
+#include <arpa/inet.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/ip.h>
+#include <stdio.h>
 
 int sniff_icmp_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	const struct icmp *header = (struct icmp *)packet;

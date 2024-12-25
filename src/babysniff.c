@@ -1,14 +1,14 @@
 #include "babysniff.h"
+#include "arguments.h"
+#include "config.h"
+#include "daemon.h"
+#include "security.h"
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 #include <unistd.h>
-#include "arguments.h"
-#include "daemon.h"
-#include "security.h"
-#include "config.h"
 
 // #ifndef _GNU_SOURCE
 // #define _POSIX_C_SOURCE 2 // POSIX.1, POSIX.2

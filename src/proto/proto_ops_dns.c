@@ -1,11 +1,11 @@
+#include "config.h"
+#include "dump.h"
+#include "log.h"
 #include "proto_ops.h"
 #include "proto/dns/dns.h"
 #include "proto/dns/header.h"
 #include "proto/dns/sections/question.h"
 #include "proto/dns/sections/rr.h"
-#include "config.h"
-#include "dump.h"
-#include "log.h"
 #include "types/buffer.h"
 
 int sniff_dns_fromwire(const uint8_t *packet, size_t length, const config_t *config) {

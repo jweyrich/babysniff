@@ -1,8 +1,8 @@
 #include "channel_ops.h"
 #include <errno.h>
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <sys/ioctl.h>
 
 int sniff_setnonblock(channel_t *channel, int nonblock) {

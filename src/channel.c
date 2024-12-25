@@ -1,8 +1,8 @@
 #include "channel.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdio.h>
 
 channel_t *sniff_alloc_channel(void) {
 	channel_t *channel = malloc(sizeof(channel_t));

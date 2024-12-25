@@ -1,8 +1,8 @@
 #pragma once
 
+#include "channel_ops_common.h"
 #include <stdint.h>
 #include <string.h>
-#include "channel_ops_common.h"
 
 #define SNIFF_DEFAULT_BUFSIZE 4096 // TODO(jweyrich): move it to a per-strategy basis
 #define SNIFF_ERR_BUFSIZE 255

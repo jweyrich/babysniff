@@ -1,10 +1,10 @@
 #include "arguments.h"
+#include "log_level.h"
+#include "version.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "log_level.h"
-#include "version.h"
 
 void usage(const cli_args_t *args) {
 	// TODO(jweyrich): Use ANSI escape sequences only when stdout is guaranteed to be a TTY.
