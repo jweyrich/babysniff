@@ -11,7 +11,7 @@
 #include <string.h>
 #include <time.h> // for gmtime_r + strftime
 
-#include <arpa/inet.h> // for struct in_addr + in6_addr + INET6_ADDRSTRLEN
+#include <arpa/inet.h> // for ntohs + struct in_addr + in6_addr
 
 static char *parse_timestamp(char *out, size_t out_size, time_t in) {
 	struct tm tm;

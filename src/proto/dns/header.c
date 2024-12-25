@@ -5,6 +5,7 @@
 #include "types/buffer.h"
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 dns_hdr_t *parse_header(buffer_t *buffer) {
 	dns_hdr_t *header = malloc(sizeof(dns_hdr_t));
