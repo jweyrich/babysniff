@@ -2,9 +2,10 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "common.h"
+#include "channel_ops_common.h"
 #include "channel.h"
-#include "config.h"
+
+typedef struct config config_t; // Forward declaration
 
 //
 // Types

@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include "common.h"
-
 typedef enum {
 	DNS_FLAG_OFF	= 0,
 	DNS_FLAG_ON		= 1

@@ -1,5 +1,9 @@
 #include "channel_ops.h"
+#include "channel_ops_common.h"
 #include "proto_ops.h"
+#include "log.h"
+#include "config.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,8 +30,6 @@
 //#include <netinet/ip_icmp.h>
 #include <time.h>
 #include <unistd.h>
-#include "log.h"
-#include "config.h"
 
 static int linux_ensure_version(channel_t *channel) {
 	return 0;

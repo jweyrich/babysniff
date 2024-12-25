@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "common.h"
 #include "proto/dns/sections.h"
 
 //

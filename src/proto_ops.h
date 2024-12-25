@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "common.h"
+#include "channel_ops_common.h"
 #include "config.h"
 
 //
