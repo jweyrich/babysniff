@@ -1,20 +1,8 @@
 #pragma once
 
 #include "proto/dns/types.h"
-#include "types/queue.h"
+// #include "types/queue.h"
 #include <stdint.h>
-
-//
-// Labels
-//
-//typedef struct dns_label {
-//	uint8	length;
-//	char *	partial;
-//} dns_label_t;
-
-#define DNS_NAME_MAXLEN			255 // Max length of an uncompressed domain name
-#define DNS_LABEL_MAXLEN		63
-#define DNS_LABEL_COMPRESS_MASK	(DNS_NAME_MAXLEN - DNS_LABEL_MAXLEN)
 
 //
 // Question
@@ -82,13 +70,6 @@ typedef struct dns_rdata_mx {
 } dns_rdata_mx_t;
 
 //
-// TXT
-//
-typedef struct dns_rdata_txt {
-	char *	data; // Descriptive human-readable text
-} dns_rdata_txt_t;
-
-//
 // RRSIG
 //
 // REFERENCE: https://datatracker.ietf.org/doc/html/rfc4034#section-3.1
@@ -103,30 +84,6 @@ typedef struct dnssec_rrsig {
 	char *		signer_name;
 	char *		signature;
 } dnssec_rdata_rrsig_t;
-
-//
-// RR
-//
-typedef struct dns_rr {
-	char *			name; // Domain name
-	dns_qtype_e		qtype:16; // Type of the data in the RDATA field
-	dns_qclass_e	qclass:16; // Class of the data in the RDATA field
-	uint32_t		ttl; // How long to keep it cached, in seconds (0 = do not cache)
-	uint16_t		rdlen; // Length of the RDATA field, in bytes
-	union rdata {
-		dns_rdata_a_t			a;
-		dns_rdata_aaaa_t		aaaa;
-		dns_rdata_ns_t			ns;
-		dns_rdata_cname_t		cname;
-		dns_rdata_soa_t			soa;
-		dns_rdata_ptr_t			ptr;
-		dns_rdata_mx_t			mx;
-		dns_rdata_txt_t			txt;
-		dnssec_rdata_rrsig_t	rrsig;
-	} rdata;
-} dns_rr_t;
-
-
 
 //
 // Section

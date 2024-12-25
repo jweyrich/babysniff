@@ -2,7 +2,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "log.h"
 
 typedef struct cli_args {
 	int argc;

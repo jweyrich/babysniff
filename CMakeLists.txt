@@ -12,6 +12,8 @@ file(GLOB babysniff_srcs RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "src/platform/shared/*.c"
     "src/proto/*.c"
     "src/proto/dns/*.c"
+    "src/proto/dns/sections/*.c"
+    "src/proto/dns/sections/rdata/*.c"
     "src/types/*.c"
 )
 
@@ -28,6 +30,8 @@ target_include_directories(babysniff PRIVATE
     ${PROJECT_SOURCE_DIR}/src/compat
     ${PROJECT_SOURCE_DIR}/src/proto
     ${PROJECT_SOURCE_DIR}/src/proto/dns
+    ${PROJECT_SOURCE_DIR}/src/proto/dns/sections
+    ${PROJECT_SOURCE_DIR}/src/proto/dns/sections/rdata
     ${PROJECT_SOURCE_DIR}/src/types
 )
 
