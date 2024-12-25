@@ -19,15 +19,16 @@ static int buffer_safe_size(buffer_t *buffer, uint32_t offset) {
 
 static int buffer_safe_offset(buffer_t *buffer, int offset) {
     uint32_t cur_size = buffer->size;
-    if (offset >= cur_size) {
+    if (offset < 0) {
+        buffer->error.code = BUFFER_EUNDERFLOW;
+        LOG_WARN("Attempt to access an invalid offset (buffer=%p size=%u offset=%d)",
+            buffer, buffer->size, offset);
+        return 0;
+    }
+    if ((uint32_t)offset >= cur_size) {
         buffer->error.code = BUFFER_EOVERFLOW;
         buffer->error.info.memreq = offset;
         LOG_WARN("Attempt to access an invalid offset (buffer=%p size=%u offset=%u)",
-            buffer, buffer->size, offset);
-        return 0;
-    } else if (offset < 0) {
-        buffer->error.code = BUFFER_EUNDERFLOW;
-        LOG_WARN("Attempt to access an invalid offset (buffer=%p size=%u offset=%d)",
             buffer, buffer->size, offset);
         return 0;
     }
