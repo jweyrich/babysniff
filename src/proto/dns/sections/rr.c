@@ -50,7 +50,7 @@ dns_rr_t *parse_rr(buffer_t *buffer) {
 		{
 			rr->rdata.a.address[0] = buffer_read_uint32(buffer);
 			if (buffer_has_error(buffer)) {
-				LOG_WARN("detected an error in the buffer while reading RR record A");
+				LOG_WARN("detected an error in the buffer while reading RR of type A");
 				goto error;
 			}
 			break;
@@ -60,7 +60,7 @@ dns_rr_t *parse_rr(buffer_t *buffer) {
 			for (size_t i=0; i<4; i++) {
 				rr->rdata.aaaa.address[i] = buffer_read_uint32(buffer);
 				if (buffer_has_error(buffer)) {
-					LOG_WARN("detected an error in the buffer while reading RR record AAAA");
+					LOG_WARN("detected an error in the buffer while reading RR of type AAAA");
 					goto error;
 				}
 			}
@@ -97,7 +97,7 @@ dns_rr_t *parse_rr(buffer_t *buffer) {
 			rr->rdata.soa.expire = buffer_read_int32(buffer);
 			rr->rdata.soa.minimum = buffer_read_uint32(buffer);
 			if (buffer_has_error(buffer)) {
-				LOG_WARN("detected an error in the buffer while reading RR record SOA");
+				LOG_WARN("detected an error in the buffer while reading RR of type SOA");
 				goto error;
 			}
 			rr->rdata.soa.serial = ntohl(rr->rdata.soa.serial);
@@ -116,7 +116,7 @@ dns_rr_t *parse_rr(buffer_t *buffer) {
 		case DNS_TYPE_MX:
 			rr->rdata.mx.preference = buffer_read_uint16(buffer);
 			if (buffer_has_error(buffer)) {
-				LOG_WARN("detected an error in the buffer while reading RR record MX");
+				LOG_WARN("detected an error in the buffer while reading RR of type MX");
 				goto error;
 			}
 			rr->rdata.mx.exchange = parse_name(buffer);
@@ -142,7 +142,7 @@ dns_rr_t *parse_rr(buffer_t *buffer) {
 			rr->rdata.rrsig.signature_inception = buffer_read_uint32(buffer);
 			rr->rdata.rrsig.key_tag = buffer_read_uint16(buffer);
 			if (buffer_has_error(buffer)) {
-				LOG_WARN("detected an error in the buffer while reading RR record RRSIG");
+				LOG_WARN("detected an error in the buffer while reading RR of type RRSIG");
 				goto error;
 			}
 			rr->rdata.rrsig.signer_name = parse_name(buffer);
