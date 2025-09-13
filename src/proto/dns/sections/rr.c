@@ -19,6 +19,136 @@ static char *parse_timestamp(char *out, size_t out_size, time_t in) {
 	return out;
 }
 
+static int parse_rdata_a(dns_rr_t *rr, buffer_t *buffer) {
+	rr->rdata.a.address[0] = buffer_read_uint32(buffer);
+	if (buffer_has_error(buffer)) {
+		LOG_WARN("detected an error in the buffer while reading RR of type A");
+		return -1;
+	}
+	return 0;
+}
+
+static int parse_rdata_aaaa(dns_rr_t *rr, buffer_t *buffer) {
+	for (size_t i=0; i<4; i++) {
+		rr->rdata.aaaa.address[i] = buffer_read_uint32(buffer);
+		if (buffer_has_error(buffer)) {
+			LOG_WARN("detected an error in the buffer while reading RR of type AAAA");
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static int parse_rdata_ns(dns_rr_t *rr, buffer_t *buffer) {
+	rr->rdata.ns.name = parse_name(buffer);
+	if (rr->rdata.ns.name == NULL) {
+		LOG_WARN("NS name is NULL");
+		return -1;
+	}
+	return 0;
+}
+
+static int parse_rdata_cname(dns_rr_t *rr, buffer_t *buffer) {
+	rr->rdata.cname.name = parse_name(buffer);
+	if (rr->rdata.cname.name == NULL) {
+		LOG_WARN("CNAME name is NULL");
+		return -1;
+	}
+	return 0;
+}
+
+static int parse_rdata_soa(dns_rr_t *rr, buffer_t *buffer) {
+	rr->rdata.soa.mname = parse_name(buffer);
+	if (rr->rdata.soa.mname == NULL) {
+		LOG_WARN("SOA mname is NULL");
+		return -1;
+	}
+	rr->rdata.soa.rname = parse_name(buffer);
+	if (rr->rdata.soa.rname == NULL) {
+		LOG_WARN("SOA rname is NULL");
+		return -1;
+	}
+	rr->rdata.soa.serial = buffer_read_uint32(buffer);
+	rr->rdata.soa.refresh = buffer_read_int32(buffer);
+	rr->rdata.soa.retry = buffer_read_int32(buffer);
+	rr->rdata.soa.expire = buffer_read_int32(buffer);
+	rr->rdata.soa.minimum = buffer_read_uint32(buffer);
+	if (buffer_has_error(buffer)) {
+		LOG_WARN("detected an error in the buffer while reading RR of type SOA");
+		return -1;
+	}
+	rr->rdata.soa.serial = ntohl(rr->rdata.soa.serial);
+	rr->rdata.soa.refresh = ntohl(rr->rdata.soa.refresh);
+	rr->rdata.soa.retry = ntohl(rr->rdata.soa.retry);
+	rr->rdata.soa.expire = ntohl(rr->rdata.soa.expire);
+	rr->rdata.soa.minimum = ntohl(rr->rdata.soa.minimum);
+	return 0;
+}
+
+static int parse_rdata_ptr(dns_rr_t *rr, buffer_t *buffer) {
+	rr->rdata.ptr.name = parse_name(buffer);
+	if (rr->rdata.ptr.name == NULL) {
+		LOG_WARN("PTR name is NULL");
+		return -1;
+	}
+	return 0;
+}
+
+static int parse_rdata_mx(dns_rr_t *rr, buffer_t *buffer) {
+	rr->rdata.mx.preference = buffer_read_uint16(buffer);
+	if (buffer_has_error(buffer)) {
+		LOG_WARN("detected an error in the buffer while reading RR of type MX");
+		return -1;
+	}
+	rr->rdata.mx.exchange = parse_name(buffer);
+	if (rr->rdata.mx.exchange == NULL) {
+		LOG_WARN("MX exchange is NULL");
+		return -1;
+	}
+	rr->rdata.mx.preference = ntohs(rr->rdata.mx.preference);
+	return 0;
+}
+
+static int parse_rdata_txt(dns_rr_t *rr, buffer_t *buffer) {
+	rr->rdata.txt.data = parse_txtdata(buffer);
+	if (rr->rdata.txt.data == NULL) {
+		LOG_WARN("TXT data is NULL");
+		return -1;
+	}
+	return 0;
+}
+
+static int parse_rdata_rrsig(dns_rr_t *rr, buffer_t *buffer) {
+	rr->rdata.rrsig.typec = buffer_read_uint16(buffer);
+	rr->rdata.rrsig.algnum = buffer_read_uint8(buffer);
+	rr->rdata.rrsig.labels = buffer_read_uint8(buffer);
+	rr->rdata.rrsig.original_ttl = buffer_read_uint32(buffer);
+	rr->rdata.rrsig.signature_expiration = buffer_read_uint32(buffer);
+	rr->rdata.rrsig.signature_inception = buffer_read_uint32(buffer);
+	rr->rdata.rrsig.key_tag = buffer_read_uint16(buffer);
+	if (buffer_has_error(buffer)) {
+		LOG_WARN("detected an error in the buffer while reading RR of type RRSIG");
+		return -1;
+	}
+	rr->rdata.rrsig.signer_name = parse_name(buffer);
+	if (rr->rdata.rrsig.signer_name == NULL) {
+		LOG_WARN("RRSIG signer name is NULL");
+		return -1;
+	}
+	// FIXME(jweyrich): parse_rrsig_signature is not working properly.
+	// rr->rdata.rrsig.signature = parse_rrsig_signature(buffer);
+	// if (rr->rdata.rrsig.signature == NULL) {
+	// 	LOG_WARN("RRSIG signature is NULL");
+	// 	return -1;
+	// }
+	rr->rdata.rrsig.typec = ntohs(rr->rdata.rrsig.typec);
+	rr->rdata.rrsig.original_ttl = ntohl(rr->rdata.rrsig.original_ttl);
+	rr->rdata.rrsig.signature_expiration = ntohl(rr->rdata.rrsig.signature_expiration);
+	rr->rdata.rrsig.signature_inception = ntohl(rr->rdata.rrsig.signature_inception);
+	rr->rdata.rrsig.key_tag = ntohs(rr->rdata.rrsig.key_tag);
+	return 0;
+}
+
 dns_rr_t *parse_rr(buffer_t *buffer) {
 	dns_rr_t *rr = malloc(sizeof(dns_rr_t));
 	if (rr == NULL)
@@ -47,120 +177,31 @@ dns_rr_t *parse_rr(buffer_t *buffer) {
 
 	switch (rr->qtype) {
 		case DNS_TYPE_A:
-		{
-			rr->rdata.a.address[0] = buffer_read_uint32(buffer);
-			if (buffer_has_error(buffer)) {
-				LOG_WARN("detected an error in the buffer while reading RR of type A");
-				goto error;
-			}
+			if (parse_rdata_a(rr, buffer) != 0) goto error;
 			break;
-		}
 		case DNS_TYPE_AAAA:
-		{
-			for (size_t i=0; i<4; i++) {
-				rr->rdata.aaaa.address[i] = buffer_read_uint32(buffer);
-				if (buffer_has_error(buffer)) {
-					LOG_WARN("detected an error in the buffer while reading RR of type AAAA");
-					goto error;
-				}
-			}
+			if (parse_rdata_aaaa(rr, buffer) != 0) goto error;
 			break;
-		}
 		case DNS_TYPE_NS:
-			rr->rdata.ns.name = parse_name(buffer);
-			if (rr->rdata.ns.name == NULL) {
-				LOG_WARN("NS name is NULL");
-				goto error;
-			}
+			if (parse_rdata_ns(rr, buffer) != 0) goto error;
 			break;
 		case DNS_TYPE_CNAME:
-			rr->rdata.cname.name = parse_name(buffer);
-			if (rr->rdata.cname.name == NULL) {
-				LOG_WARN("CNAME name is NULL");
-				goto error;
-			}
+			if (parse_rdata_cname(rr, buffer) != 0) goto error;
 			break;
 		case DNS_TYPE_SOA:
-			rr->rdata.soa.mname = parse_name(buffer);
-			if (rr->rdata.soa.mname == NULL) {
-				LOG_WARN("SOA mname is NULL");
-				goto error;
-			}
-			rr->rdata.soa.rname = parse_name(buffer);
-			if (rr->rdata.soa.rname == NULL) {
-				LOG_WARN("SOA rname is NULL");
-				goto error;
-			}
-			rr->rdata.soa.serial = buffer_read_uint32(buffer);
-			rr->rdata.soa.refresh = buffer_read_int32(buffer);
-			rr->rdata.soa.retry = buffer_read_int32(buffer);
-			rr->rdata.soa.expire = buffer_read_int32(buffer);
-			rr->rdata.soa.minimum = buffer_read_uint32(buffer);
-			if (buffer_has_error(buffer)) {
-				LOG_WARN("detected an error in the buffer while reading RR of type SOA");
-				goto error;
-			}
-			rr->rdata.soa.serial = ntohl(rr->rdata.soa.serial);
-			rr->rdata.soa.refresh = ntohl(rr->rdata.soa.refresh);
-			rr->rdata.soa.retry = ntohl(rr->rdata.soa.retry);
-			rr->rdata.soa.expire = ntohl(rr->rdata.soa.expire);
-			rr->rdata.soa.minimum = ntohl(rr->rdata.soa.minimum);
+			if (parse_rdata_soa(rr, buffer) != 0) goto error;
 			break;
 		case DNS_TYPE_PTR:
-			rr->rdata.ptr.name = parse_name(buffer);
-			if (rr->rdata.ptr.name == NULL) {
-				LOG_WARN("PTR name is NULL");
-				goto error;
-			}
+			if (parse_rdata_ptr(rr, buffer) != 0) goto error;
 			break;
 		case DNS_TYPE_MX:
-			rr->rdata.mx.preference = buffer_read_uint16(buffer);
-			if (buffer_has_error(buffer)) {
-				LOG_WARN("detected an error in the buffer while reading RR of type MX");
-				goto error;
-			}
-			rr->rdata.mx.exchange = parse_name(buffer);
-			if (rr->rdata.mx.exchange == NULL) {
-				LOG_WARN("MX exchange is NULL");
-				goto error;
-			}
-			rr->rdata.mx.preference = ntohs(rr->rdata.mx.preference);
+			if (parse_rdata_mx(rr, buffer) != 0) goto error;
 			break;
 		case DNS_TYPE_TXT:
-			rr->rdata.txt.data = parse_txtdata(buffer);
-			if (rr->rdata.txt.data == NULL) {
-				LOG_WARN("TXT data is NULL");
-				goto error;
-			}
+			if (parse_rdata_txt(rr, buffer) != 0) goto error;
 			break;
 		case DNS_TYPE_RRSIG:
-			rr->rdata.rrsig.typec = buffer_read_uint16(buffer);
-			rr->rdata.rrsig.algnum = buffer_read_uint8(buffer);
-			rr->rdata.rrsig.labels = buffer_read_uint8(buffer);
-			rr->rdata.rrsig.original_ttl = buffer_read_uint32(buffer);
-			rr->rdata.rrsig.signature_expiration = buffer_read_uint32(buffer);
-			rr->rdata.rrsig.signature_inception = buffer_read_uint32(buffer);
-			rr->rdata.rrsig.key_tag = buffer_read_uint16(buffer);
-			if (buffer_has_error(buffer)) {
-				LOG_WARN("detected an error in the buffer while reading RR of type RRSIG");
-				goto error;
-			}
-			rr->rdata.rrsig.signer_name = parse_name(buffer);
-			if (rr->rdata.rrsig.signer_name == NULL) {
-				LOG_WARN("RRSIG signer name is NULL");
-				goto error;
-			}
-			// FIXME(jweyrich): parse_rrsig_signature is not working properly.
-			// rr->rdata.rrsig.signature = parse_rrsig_signature(buffer);
-			// if (rr->rdata.rrsig.signature == NULL) {
-			// 	LOG_WARN("RRSIG signature is NULL");
-			// 	goto error;
-			// }
-			rr->rdata.rrsig.typec = ntohs(rr->rdata.rrsig.typec);
-			rr->rdata.rrsig.original_ttl = ntohl(rr->rdata.rrsig.original_ttl);
-			rr->rdata.rrsig.signature_expiration = ntohl(rr->rdata.rrsig.signature_expiration);
-			rr->rdata.rrsig.signature_inception = ntohl(rr->rdata.rrsig.signature_inception);
-			rr->rdata.rrsig.key_tag = ntohs(rr->rdata.rrsig.key_tag);
+			if (parse_rdata_rrsig(rr, buffer) != 0) goto error;
 			break;
 		case DNS_TYPE_NSEC3:
 			break;
