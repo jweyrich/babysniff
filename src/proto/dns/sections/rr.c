@@ -1,5 +1,4 @@
 #include "rr.h"
-#include "alloc.h"
 #include "log.h"
 #include "proto/dns/arrays.h"
 #include "proto/dns/name.h"
@@ -241,8 +240,8 @@ void free_rr(dns_rr_t *rr) {
 			free_txtdata(rr->rdata.txt.data);
 			break;
 		case DNS_TYPE_RRSIG:
-			free_name(rr->rdata.rrsig.signer_name);
-			safe_free(rr->rdata.rrsig.signature);
+			free(rr->rdata.rrsig.signer_name);
+			free(rr->rdata.rrsig.signature);
 			break;
 		default:
 			break;
