@@ -3,6 +3,7 @@
 #include "proto/dns/sections/rdata/a.h"
 #include "proto/dns/sections/rdata/aaaa.h"
 #include "proto/dns/sections/rdata/cname.h"
+#include "proto/dns/sections/rdata/dnskey.h"
 #include "proto/dns/sections/rdata/mx.h"
 #include "proto/dns/sections/rdata/ns.h"
 #include "proto/dns/sections/rdata/ptr.h"
@@ -27,6 +28,7 @@ typedef union dns_rdata {
 	dns_rdata_mx_t			mx;
 	dns_rdata_txt_t			txt;
 	dnssec_rdata_rrsig_t	rrsig;
+	dnssec_rdata_dnskey_t	dnskey;
 } dns_rdata_t;
 
 int parse_rdata(dns_rr_t *rr, buffer_t *buffer);

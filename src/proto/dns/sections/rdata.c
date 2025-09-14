@@ -32,6 +32,9 @@ int parse_rdata(dns_rr_t *rr, buffer_t *buffer) {
 		case DNS_TYPE_RRSIG:
 			if (parse_rdata_rrsig(&rr->rdata, buffer) != 0) return -1;
 			break;
+		case DNS_TYPE_DNSKEY:
+			if (parse_rdata_dnskey(&rr->rdata, buffer) != 0) return -1;
+			break;
 		case DNS_TYPE_NSEC3:
 			break;
 		default:
@@ -69,6 +72,9 @@ void free_rdata(dns_rr_t *rr) {
 		case DNS_TYPE_RRSIG:
 			free_rdata_rrsig(&rr->rdata);
 			break;
+		case DNS_TYPE_DNSKEY:
+			free_rdata_dnskey(&rr->rdata);
+			break;
 		case DNS_TYPE_NSEC3:
 			break;
 		default:
@@ -104,6 +110,9 @@ void print_rdata(dns_rr_t *rr) {
 			break;
 		case DNS_TYPE_RRSIG:
 			print_rdata_rrsig(&rr->rdata);
+			break;
+		case DNS_TYPE_DNSKEY:
+			print_rdata_dnskey(&rr->rdata);
 			break;
 		case DNS_TYPE_NSEC3:
 			break;
