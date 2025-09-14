@@ -2,7 +2,8 @@
 #include "log.h"
 #include "types/buffer.h"
 #include "proto/dns/sections/rr.h"
-#include <stdlib.h>
+#include "utils.h" // for utils_in_addr_to_str
+#include <arpa/inet.h> // for INET_ADDRSTRLEN
 
 int parse_rdata_a(dns_rr_t *rr, buffer_t *buffer) {
 	rr->rdata.a.address[0] = buffer_read_uint32(buffer);
@@ -15,4 +16,10 @@ int parse_rdata_a(dns_rr_t *rr, buffer_t *buffer) {
 
 void free_rdata_a(dns_rr_t *rr) {
     // Nothing to do
+}
+
+void print_rdata_a(dns_rr_t *rr) {
+	char ip_as_str[INET_ADDRSTRLEN];
+	const char *ip_addr = utils_in_addr_to_str(ip_as_str, sizeof(ip_as_str), (struct in_addr *)rr->rdata.a.address);
+	LOG_PRINTF("%s\n", ip_addr);
 }

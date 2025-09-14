@@ -24,3 +24,4 @@ typedef struct dnssec_rrsig {
 
 int parse_rdata_rrsig(dns_rr_t *rr, buffer_t *buffer);
 void free_rdata_rrsig(dns_rr_t *rr);
+void print_rdata_rrsig(dns_rr_t *rr);

@@ -41,3 +41,7 @@ int parse_rdata_txt(dns_rr_t *rr, buffer_t *buffer) {
 void free_rdata_txt(dns_rr_t *rr) {
 	free(rr->rdata.txt.data);
 }
+
+void print_rdata_txt(dns_rr_t *rr) {
+	LOG_PRINTF("\"%s\" \n", rr->rdata.txt.data);
+}

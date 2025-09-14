@@ -15,3 +15,4 @@ typedef struct dns_rdata_ns {
 
 int parse_rdata_ns(dns_rr_t *rr, buffer_t *buffer);
 void free_rdata_ns(dns_rr_t *rr);
+void print_rdata_ns(dns_rr_t *rr);

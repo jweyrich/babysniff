@@ -16,3 +16,7 @@ int parse_rdata_ns(dns_rr_t *rr, buffer_t *buffer) {
 void free_rdata_ns(dns_rr_t *rr) {
     free_name(rr->rdata.ns.name);
 }
+
+void print_rdata_ns(dns_rr_t *rr) {
+	LOG_PRINTF("%s\n", rr->rdata.ns.name);
+}

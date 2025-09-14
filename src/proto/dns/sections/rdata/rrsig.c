@@ -3,10 +3,12 @@
 #include "types/buffer.h"
 #include "proto/dns/name.h"
 #include "proto/dns/sections/rr.h"
+#include "proto/dns/arrays.h"
 #include "base64.h"
 #include <stdlib.h> // for malloc
 #include <string.h> // for strlen
 #include <netinet/in.h> // for ntohs and ntohl
+#include <time.h> // for gmtime_r + strftime
 
 static char *parse_signature(buffer_t *buffer) {
 	//pd3IpdiZHH7ig7szxDcWSKtkmpK52w7hcCJs/6TL74AH2Wyd4N4pAYbpRuNSuuPHwH+fT8P9f+TqKTeTa2DSzD1bumgICnHhOi9yO0pAYdsyThFdiiJtg8vPMyyMagxhJkurienCAVA4nqF40cMwJgAfHS+Vc+EQSlbDVFjmI5s=
@@ -61,4 +63,27 @@ int parse_rdata_rrsig(dns_rr_t *rr, buffer_t *buffer) {
 void free_rdata_rrsig(dns_rr_t *rr) {
     free(rr->rdata.rrsig.signer_name);
 	free(rr->rdata.rrsig.signature);
+}
+
+static char *parse_timestamp(char *out, size_t out_size, time_t in) {
+	struct tm tm;
+	gmtime_r(&in, &tm);
+	strftime(out, out_size, "%Y%m%d%H%M%S", &tm); // YYYYMMDDHHmmSS
+	return out;
+}
+
+void print_rdata_rrsig(dns_rr_t *rr) {
+	char sig_expiration[15];
+	char sig_inception[15];
+	LOG_PRINTF("%s %s %u %u %s %s %u %s %s\n",
+		totext(DNS_ARRAY_QTYPE, rr->rdata.rrsig.typec),
+		totext(DNSSEC_ARRAY_ALGORITHM, rr->rdata.rrsig.algnum),
+		rr->rdata.rrsig.labels,
+		rr->rdata.rrsig.original_ttl,
+		parse_timestamp(sig_expiration, sizeof(sig_expiration), rr->rdata.rrsig.signature_expiration),
+		parse_timestamp(sig_inception, sizeof(sig_inception), rr->rdata.rrsig.signature_inception),
+		rr->rdata.rrsig.key_tag,
+		rr->rdata.rrsig.signer_name,
+		rr->rdata.rrsig.signature
+	);
 }

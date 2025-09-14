@@ -10,13 +10,6 @@
 #include <string.h>
 #include <time.h> // for gmtime_r + strftime
 
-static char *parse_timestamp(char *out, size_t out_size, time_t in) {
-	struct tm tm;
-	gmtime_r(&in, &tm);
-	strftime(out, out_size, "%Y%m%d%H%M%S", &tm); // YYYYMMDDHHmmSS
-	return out;
-}
-
 dns_rr_t *parse_rr(buffer_t *buffer) {
 	dns_rr_t *rr = malloc(sizeof(dns_rr_t));
 	if (rr == NULL)
@@ -130,63 +123,32 @@ void print_rr(dns_rr_t *rr) {
 		totext(DNS_ARRAY_QTYPE, rr->qtype));
 	switch (rr->qtype) {
 		case DNS_TYPE_A:
-		{
-			char ip_as_str[INET_ADDRSTRLEN];
-			const char *ip_addr = utils_in_addr_to_str(ip_as_str, sizeof(ip_as_str), (struct in_addr *)rr->rdata.a.address);
-			LOG_PRINTF("%s\n", ip_addr);
+			print_rdata_a(rr);
 			break;
-		}
 		case DNS_TYPE_AAAA:
-		{
-			char ip_as_str[INET6_ADDRSTRLEN];
-			const char *ip_addr = utils_in6_addr_to_str(ip_as_str, sizeof(ip_as_str), (struct in6_addr *)rr->rdata.aaaa.address);
-			LOG_PRINTF("%s\n", ip_addr);
+			print_rdata_aaaa(rr);
 			break;
-		}
 		case DNS_TYPE_NS:
-			LOG_PRINTF("%s\n", rr->rdata.ns.name);
+			print_rdata_ns(rr);
 			break;
 		case DNS_TYPE_CNAME:
-			LOG_PRINTF("%s\n", rr->rdata.cname.name);
+			print_rdata_cname(rr);
 			break;
 		case DNS_TYPE_SOA:
-			LOG_PRINTF("%s %s %u %d %d %d %u\n",
-				rr->rdata.soa.mname,
-				rr->rdata.soa.rname,
-				rr->rdata.soa.serial,
-				rr->rdata.soa.refresh,
-				rr->rdata.soa.retry,
-				rr->rdata.soa.expire,
-				rr->rdata.soa.minimum);
+			print_rdata_soa(rr);
 			break;
 		case DNS_TYPE_PTR:
-			LOG_PRINTF("%s\n", rr->rdata.ptr.name);
+			print_rdata_ptr(rr);
 			break;
 		case DNS_TYPE_MX:
-			LOG_PRINTF("%u\t%s\n",
-				rr->rdata.mx.preference,
-				rr->rdata.mx.exchange);
+			print_rdata_mx(rr);
 			break;
 		case DNS_TYPE_TXT:
-			LOG_PRINTF("\"%s\" \n", rr->rdata.txt.data);
+			print_rdata_txt(rr);
 			break;
 		case DNS_TYPE_RRSIG:
-		{
-			char sig_expiration[15];
-			char sig_inception[15];
-			LOG_PRINTF("%s %s %u %u %s %s %u %s %s\n",
-				totext(DNS_ARRAY_QTYPE, rr->rdata.rrsig.typec),
-				totext(DNSSEC_ARRAY_ALGORITHM, rr->rdata.rrsig.algnum),
-				rr->rdata.rrsig.labels,
-				rr->rdata.rrsig.original_ttl,
-				parse_timestamp(sig_expiration, sizeof(sig_expiration), rr->rdata.rrsig.signature_expiration),
-				parse_timestamp(sig_inception, sizeof(sig_inception), rr->rdata.rrsig.signature_inception),
-				rr->rdata.rrsig.key_tag,
-				rr->rdata.rrsig.signer_name,
-				rr->rdata.rrsig.signature
-			);
+			print_rdata_rrsig(rr);
 			break;
-		}
 		case DNS_TYPE_NSEC3:
 			break;
 		default:

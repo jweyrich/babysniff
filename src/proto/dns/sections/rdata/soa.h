@@ -21,3 +21,4 @@ typedef struct dns_rdata_soa {
 
 int parse_rdata_soa(dns_rr_t *rr, buffer_t *buffer);
 void free_rdata_soa(dns_rr_t *rr);
+void print_rdata_soa(dns_rr_t *rr);

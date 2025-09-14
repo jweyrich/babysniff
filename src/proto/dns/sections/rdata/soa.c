@@ -36,3 +36,14 @@ void free_rdata_soa(dns_rr_t *rr) {
     free_name(rr->rdata.soa.mname);
 	free_name(rr->rdata.soa.rname);
 }
+
+void print_rdata_soa(dns_rr_t *rr) {
+	LOG_PRINTF("%s %s %u %d %d %d %u\n",
+		rr->rdata.soa.mname,
+		rr->rdata.soa.rname,
+		rr->rdata.soa.serial,
+		rr->rdata.soa.refresh,
+		rr->rdata.soa.retry,
+		rr->rdata.soa.expire,
+		rr->rdata.soa.minimum);
+}

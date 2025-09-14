@@ -23,3 +23,9 @@ int parse_rdata_mx(dns_rr_t *rr, buffer_t *buffer) {
 void free_rdata_mx(dns_rr_t *rr) {
     free_name(rr->rdata.mx.exchange);
 }
+
+void print_rdata_mx(dns_rr_t *rr) {
+	LOG_PRINTF("%u\t%s\n",
+		rr->rdata.mx.preference,
+		rr->rdata.mx.exchange);
+}

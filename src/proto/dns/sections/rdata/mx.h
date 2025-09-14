@@ -16,3 +16,4 @@ typedef struct dns_rdata_mx {
 
 int parse_rdata_mx(dns_rr_t *rr, buffer_t *buffer);
 void free_rdata_mx(dns_rr_t *rr);
+void print_rdata_mx(dns_rr_t *rr);
