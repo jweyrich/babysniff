@@ -3,6 +3,7 @@
 #include "types/buffer.h"
 #include "proto/dns/name.h"
 #include "proto/dns/sections/rr.h"
+#include <netinet/in.h> // for ntohs and ntohl
 
 int parse_rdata_soa(dns_rr_t *rr, buffer_t *buffer) {
 	rr->rdata.soa.mname = parse_name(buffer);
