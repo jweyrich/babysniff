@@ -1,9 +1,10 @@
 #include "txt.h"
 #include "log.h"
 #include "types/buffer.h"
+#include "proto/dns/sections/rr.h"
 #include <stdlib.h>
 
-char *parse_txtdata(buffer_t *buffer) {
+static char *parse_data(buffer_t *buffer) {
 	char *data = NULL;
 	size_t length;
 
@@ -28,8 +29,15 @@ error:
 	return NULL;
 }
 
-void free_txtdata(char *data) {
-	if (data == NULL)
-		return;
-	free(data);
+int parse_rdata_txt(dns_rr_t *rr, buffer_t *buffer) {
+	rr->rdata.txt.data = parse_data(buffer);
+	if (rr->rdata.txt.data == NULL) {
+		LOG_WARN("TXT data is NULL");
+		return -1;
+	}
+	return 0;
+}
+
+void free_rdata_txt(dns_rr_t *rr) {
+	free(rr->rdata.txt.data);
 }

@@ -1,7 +1,15 @@
 #pragma once
 
-#include "proto/dns/sections.h"
+#include "proto/dns/sections/rdata/a.h"
+#include "proto/dns/sections/rdata/aaaa.h"
+#include "proto/dns/sections/rdata/cname.h"
+#include "proto/dns/sections/rdata/mx.h"
+#include "proto/dns/sections/rdata/ns.h"
+#include "proto/dns/sections/rdata/ptr.h"
+#include "proto/dns/sections/rdata/rrsig.h"
+#include "proto/dns/sections/rdata/soa.h"
 #include "proto/dns/sections/rdata/txt.h"
+#include "proto/dns/sections.h"
 
 typedef struct buffer buffer_t; // Forward declaration
 
