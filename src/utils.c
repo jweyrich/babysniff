@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h> // for strlen
 
 char *utils_ether_addr_to_str(char *output, size_t output_size, const struct ether_addr *input) {
 	if (output_size < ETHER_ADDR_LEN * 3) { // Minimum size is 18 bytes including the null terminator
@@ -57,4 +58,39 @@ char *utils_in6_addr_to_str(char *output, size_t output_size, const struct in6_a
 #else
 	return NULL;
 #endif
+}
+
+int utils_relative_path(char *output, size_t output_size, const char *absolute_path) {
+	static const char *current_file_path = __FILE__; // Current file path
+	size_t abs_len = strlen(absolute_path);
+	if (abs_len >= output_size) {
+		return -1; // Output buffer too small
+	}
+	// Find the last '/' in both paths
+	const char *cur_last_slash = strrchr(current_file_path, '/');
+	const char *abs_last_slash = strrchr(absolute_path, '/');
+	if (!cur_last_slash || !abs_last_slash) {
+		return -1; // Invalid path format
+	}
+	size_t cur_dir_len = cur_last_slash - current_file_path + 1; // Include the '/'
+	size_t abs_dir_len = abs_last_slash - absolute_path + 1; // Include the '/'
+	// Compare directory parts
+	if (cur_dir_len > abs_dir_len || strncmp(current_file_path, absolute_path, cur_dir_len) != 0) {
+		// No common directory, return the original absolute path
+		if (abs_len + 1 > output_size) {
+			return -1; // Output buffer too small
+		}
+		strncpy(output, absolute_path, output_size);
+		output[output_size - 1] = '\0'; // Ensure null termination
+		return 0;
+	}
+	// Common directory found, construct relative path
+	const char *relative_part = absolute_path + cur_dir_len;
+	size_t relative_part_len = abs_len - cur_dir_len;
+	if (relative_part_len + 1 > output_size) {
+		return -1; // Output buffer too small
+	}
+	strncpy(output, relative_part, relative_part_len);
+	output[relative_part_len] = '\0'; // Ensure null termination
+	return 0;
 }

@@ -14,3 +14,6 @@ char *utils_in_addr_to_str(char *output, size_t output_size, const struct in_add
 
 // Convert a `dns_rdata_aaaa_t` structure to a string representation.
 char *utils_in6_addr_to_str(char *output, size_t output_size, const struct in6_addr *input);
+
+// Convert an absolute file path to a path relative to the src directory
+int utils_relative_path(char *output, size_t output_size, const char *absolute_path);
