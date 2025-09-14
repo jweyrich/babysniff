@@ -24,19 +24,21 @@ char *parse_name(buffer_t *buffer) {
 			break;
 		}
 		if (label_len & DNS_LABEL_COMPRESS_MASK) { // compressed label?
-			uint32_t new_off;
 			compressed++;
-			// get the new offset
-			new_off = buffer_read_uint8(buffer);
-			// LOG_DEBUG("new_off is %#zx", new_off);
+			// Get the second byte to complete the 16-bit pointer
+			uint8_t second_byte = buffer_read_uint8(buffer);
+			// LOG_DEBUG("second_byte is %#x", second_byte);
 			if (buffer_has_error(buffer))
 				goto error;
-			// keep the original position
+			// Combine the two bytes and mask off the compression bits (top 2 bits)
+			uint32_t new_off = ((label_len & ~DNS_LABEL_COMPRESS_MASK) << 8) | second_byte;
+			// LOG_DEBUG("new_off is %#x", new_off);
+			// Keep the original position
 			if (compressed == 1) {
 				orig_pos = buffer_tell(buffer);
 				// LOG_DEBUG("orig_pos is %#zx", orig_pos);
 			}
-			// move to new offset
+			// Move to new offset
 			buffer_seek(buffer, new_off);
 			if (buffer_has_error(buffer))
 				goto error;
@@ -85,20 +87,22 @@ size_t predict_name_length(buffer_t *buffer) {
 	size_t orig_pos, label_len, total_len = 0;
 
 	orig_pos = buffer_tell(buffer);
-	// LOG_DEBUG("starting at %#x", orig_pos);
 	for (;;) {
 		label_len = buffer_read_uint8(buffer);
-		// LOG_DEBUG("label_len = %zd", label_len);
 		if (buffer_has_error(buffer))
 			goto error;
-		if (label_len == 0) // null label?
+		if (label_len == 0) { // null label?
+			// A null label indicates the end of the name.
 			break;
+		}
 		if (label_len & DNS_LABEL_COMPRESS_MASK) { // compressed label?
-			// get the new offset
-			uint32_t new_off = buffer_read_uint8(buffer);
-			// LOG_DEBUG("new offset is %#zx", new_off);
+			// Get the second byte to complete the 16-bit pointer
+			uint8_t second_byte = buffer_read_uint8(buffer);
 			if (buffer_has_error(buffer))
 				goto error;
+			// Combine the two bytes and mask off the compression bits (top 2 bits)
+			uint32_t new_off = ((label_len & ~DNS_LABEL_COMPRESS_MASK) << 8) | second_byte;
+			// Move to new offset
 			buffer_seek(buffer, new_off);
 			if (buffer_has_error(buffer))
 				goto error;
@@ -109,7 +113,6 @@ size_t predict_name_length(buffer_t *buffer) {
 		total_len += label_len;
 		if (total_len > DNS_NAME_MAXLEN) // overflow?
 			goto error;
-		// LOG_DEBUG("skiping from %#x", buffer_tell(buffer));
 		buffer_skip(buffer, label_len);
 		if (buffer_has_error(buffer))
 			goto error;
@@ -118,7 +121,6 @@ size_t predict_name_length(buffer_t *buffer) {
 	}
 	// move back to original position
 	buffer_seek(buffer, orig_pos);
-	// LOG_DEBUG("jumped back to %#zx", orig_pos);
 	if (label_count > 0)
 		return total_len;
 error:
