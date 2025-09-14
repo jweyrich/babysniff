@@ -1,7 +1,7 @@
 #include "txt.h"
 #include "log.h"
 #include "types/buffer.h"
-#include "proto/dns/sections/rr.h"
+#include "proto/dns/sections/rdata.h"
 #include <stdlib.h>
 
 static char *parse_data(buffer_t *buffer) {
@@ -29,19 +29,19 @@ error:
 	return NULL;
 }
 
-int parse_rdata_txt(dns_rr_t *rr, buffer_t *buffer) {
-	rr->rdata.txt.data = parse_data(buffer);
-	if (rr->rdata.txt.data == NULL) {
+int parse_rdata_txt(dns_rdata_t *rdata, buffer_t *buffer) {
+	rdata->txt.data = parse_data(buffer);
+	if (rdata->txt.data == NULL) {
 		LOG_WARN("TXT data is NULL");
 		return -1;
 	}
 	return 0;
 }
 
-void free_rdata_txt(dns_rr_t *rr) {
-	free(rr->rdata.txt.data);
+void free_rdata_txt(dns_rdata_t *rdata) {
+	free(rdata->txt.data);
 }
 
-void print_rdata_txt(dns_rr_t *rr) {
-	LOG_PRINTF("\"%s\" \n", rr->rdata.txt.data);
+void print_rdata_txt(dns_rdata_t *rdata) {
+	LOG_PRINTF("\"%s\" \n", rdata->txt.data);
 }

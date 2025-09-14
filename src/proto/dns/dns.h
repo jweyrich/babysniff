@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include "proto/dns/sections.h"
+#include "proto/dns/types.h"
+#include <stdint.h>
 
 //
 // Flags

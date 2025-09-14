@@ -5,15 +5,6 @@
 #include <stdint.h>
 
 //
-// Question
-//
-typedef struct dns_question {
-	char *			name; // Domain name
-	dns_qtype_e		qtype:16; // Type of the query
-	dns_qclass_e	qclass:16; // Class of the query
-} dns_question_t;
-
-//
 // Section
 //
 //typedef struct dns_section {

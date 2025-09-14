@@ -2,13 +2,10 @@
 #include "log.h"
 #include "proto/dns/arrays.h"
 #include "proto/dns/name.h"
-#include "proto/dns/sections.h"
 #include "types/buffer.h"
-#include "utils.h"
 #include <arpa/inet.h> // for ntohs + struct in_addr + in6_addr
-#include <stdlib.h>
-#include <string.h>
-#include <time.h> // for gmtime_r + strftime
+#include <stdlib.h>  // for malloc
+#include <string.h>  // for memset
 
 dns_rr_t *parse_rr(buffer_t *buffer) {
 	dns_rr_t *rr = malloc(sizeof(dns_rr_t));
@@ -36,42 +33,13 @@ dns_rr_t *parse_rr(buffer_t *buffer) {
 		rr->rdlen = ntohs(rr->rdlen);
 	}
 
-	switch (rr->qtype) {
-		case DNS_TYPE_A:
-			if (parse_rdata_a(rr, buffer) != 0) goto error;
-			break;
-		case DNS_TYPE_AAAA:
-			if (parse_rdata_aaaa(rr, buffer) != 0) goto error;
-			break;
-		case DNS_TYPE_NS:
-			if (parse_rdata_ns(rr, buffer) != 0) goto error;
-			break;
-		case DNS_TYPE_CNAME:
-			if (parse_rdata_cname(rr, buffer) != 0) goto error;
-			break;
-		case DNS_TYPE_SOA:
-			if (parse_rdata_soa(rr, buffer) != 0) goto error;
-			break;
-		case DNS_TYPE_PTR:
-			if (parse_rdata_ptr(rr, buffer) != 0) goto error;
-			break;
-		case DNS_TYPE_MX:
-			if (parse_rdata_mx(rr, buffer) != 0) goto error;
-			break;
-		case DNS_TYPE_TXT:
-			if (parse_rdata_txt(rr, buffer) != 0) goto error;
-			break;
-		case DNS_TYPE_RRSIG:
-			if (parse_rdata_rrsig(rr, buffer) != 0) goto error;
-			break;
-		case DNS_TYPE_NSEC3:
-			break;
-		default:
-			break;
+	if (parse_rdata(rr, buffer) != 0) {
+		LOG_WARN("failed to parse RDATA");
+		goto error;
 	}
 	return rr;
 error:
-	LOG_WARN("Invalid resource record");
+	LOG_WARN("invalid resource record");
 	free_rr(rr);
 	return NULL;
 }
@@ -79,39 +47,7 @@ error:
 void free_rr(dns_rr_t *rr) {
 	if (rr == NULL)
 		return;
-	switch (rr->qtype) {
-		case DNS_TYPE_A:
-			free_rdata_a(rr);
-			break;
-		case DNS_TYPE_AAAA:
-			free_rdata_aaaa(rr);
-			break;
-		case DNS_TYPE_NS:
-			free_rdata_ns(rr);
-			break;
-		case DNS_TYPE_CNAME:
-			free_rdata_cname(rr);
-			break;
-		case DNS_TYPE_SOA:
-			free_rdata_soa(rr);
-			break;
-		case DNS_TYPE_PTR:
-			free_rdata_ptr(rr);
-			break;
-		case DNS_TYPE_MX:
-			free_rdata_mx(rr);
-			break;
-		case DNS_TYPE_TXT:
-			free_rdata_txt(rr);
-			break;
-		case DNS_TYPE_RRSIG:
-			free_rdata_rrsig(rr);
-			break;
-		case DNS_TYPE_NSEC3:
-			break;
-		default:
-			break;
-	}
+	free_rdata(rr);
 	free_name(rr->name);
 	free(rr);
 }
@@ -121,39 +57,5 @@ void print_rr(dns_rr_t *rr) {
 		rr->name, rr->ttl,
 		totext(DNS_ARRAY_QCLASS, rr->qclass),
 		totext(DNS_ARRAY_QTYPE, rr->qtype));
-	switch (rr->qtype) {
-		case DNS_TYPE_A:
-			print_rdata_a(rr);
-			break;
-		case DNS_TYPE_AAAA:
-			print_rdata_aaaa(rr);
-			break;
-		case DNS_TYPE_NS:
-			print_rdata_ns(rr);
-			break;
-		case DNS_TYPE_CNAME:
-			print_rdata_cname(rr);
-			break;
-		case DNS_TYPE_SOA:
-			print_rdata_soa(rr);
-			break;
-		case DNS_TYPE_PTR:
-			print_rdata_ptr(rr);
-			break;
-		case DNS_TYPE_MX:
-			print_rdata_mx(rr);
-			break;
-		case DNS_TYPE_TXT:
-			print_rdata_txt(rr);
-			break;
-		case DNS_TYPE_RRSIG:
-			print_rdata_rrsig(rr);
-			break;
-		case DNS_TYPE_NSEC3:
-			break;
-		default:
-			//LOG_PRINTF("\n");
-			LOG_WARN("Unhandled qtype (%u -> %s)", rr->qtype, totext(DNS_ARRAY_QTYPE, rr->qtype));
-			break;
-	}
+	print_rdata(rr);
 }

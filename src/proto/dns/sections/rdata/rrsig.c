@@ -2,7 +2,7 @@
 #include "log.h"
 #include "types/buffer.h"
 #include "proto/dns/name.h"
-#include "proto/dns/sections/rr.h"
+#include "proto/dns/sections/rdata.h"
 #include "proto/dns/arrays.h"
 #include "base64.h"
 #include <stdlib.h> // for malloc
@@ -29,40 +29,40 @@ static char *parse_signature(buffer_t *buffer) {
 	return encoded;
 }
 
-int parse_rdata_rrsig(dns_rr_t *rr, buffer_t *buffer) {
-	rr->rdata.rrsig.typec = buffer_read_uint16(buffer);
-	rr->rdata.rrsig.algnum = buffer_read_uint8(buffer);
-	rr->rdata.rrsig.labels = buffer_read_uint8(buffer);
-	rr->rdata.rrsig.original_ttl = buffer_read_uint32(buffer);
-	rr->rdata.rrsig.signature_expiration = buffer_read_uint32(buffer);
-	rr->rdata.rrsig.signature_inception = buffer_read_uint32(buffer);
-	rr->rdata.rrsig.key_tag = buffer_read_uint16(buffer);
+int parse_rdata_rrsig(dns_rdata_t *rdata, buffer_t *buffer) {
+	rdata->rrsig.typec = buffer_read_uint16(buffer);
+	rdata->rrsig.algnum = buffer_read_uint8(buffer);
+	rdata->rrsig.labels = buffer_read_uint8(buffer);
+	rdata->rrsig.original_ttl = buffer_read_uint32(buffer);
+	rdata->rrsig.signature_expiration = buffer_read_uint32(buffer);
+	rdata->rrsig.signature_inception = buffer_read_uint32(buffer);
+	rdata->rrsig.key_tag = buffer_read_uint16(buffer);
 	if (buffer_has_error(buffer)) {
 		LOG_WARN("detected an error in the buffer while reading RR of type RRSIG");
 		return -1;
 	}
-	rr->rdata.rrsig.signer_name = parse_name(buffer);
-	if (rr->rdata.rrsig.signer_name == NULL) {
+	rdata->rrsig.signer_name = parse_name(buffer);
+	if (rdata->rrsig.signer_name == NULL) {
 		LOG_WARN("RRSIG signer name is NULL");
 		return -1;
 	}
 	// FIXME(jweyrich): parse_signature is not working properly.
-	// rr->rdata.rrsig.signature = parse_signature(buffer);
-	// if (rr->rdata.rrsig.signature == NULL) {
+	// rdata->rrsig.signature = parse_signature(buffer);
+	// if (rdata->rrsig.signature == NULL) {
 	// 	LOG_WARN("RRSIG signature is NULL");
 	// 	return -1;
 	// }
-	rr->rdata.rrsig.typec = ntohs(rr->rdata.rrsig.typec);
-	rr->rdata.rrsig.original_ttl = ntohl(rr->rdata.rrsig.original_ttl);
-	rr->rdata.rrsig.signature_expiration = ntohl(rr->rdata.rrsig.signature_expiration);
-	rr->rdata.rrsig.signature_inception = ntohl(rr->rdata.rrsig.signature_inception);
-	rr->rdata.rrsig.key_tag = ntohs(rr->rdata.rrsig.key_tag);
+	rdata->rrsig.typec = ntohs(rdata->rrsig.typec);
+	rdata->rrsig.original_ttl = ntohl(rdata->rrsig.original_ttl);
+	rdata->rrsig.signature_expiration = ntohl(rdata->rrsig.signature_expiration);
+	rdata->rrsig.signature_inception = ntohl(rdata->rrsig.signature_inception);
+	rdata->rrsig.key_tag = ntohs(rdata->rrsig.key_tag);
 	return 0;
 }
 
-void free_rdata_rrsig(dns_rr_t *rr) {
-    free(rr->rdata.rrsig.signer_name);
-	free(rr->rdata.rrsig.signature);
+void free_rdata_rrsig(dns_rdata_t *rdata) {
+    free(rdata->rrsig.signer_name);
+	free(rdata->rrsig.signature);
 }
 
 static char *parse_timestamp(char *out, size_t out_size, time_t in) {
@@ -72,18 +72,18 @@ static char *parse_timestamp(char *out, size_t out_size, time_t in) {
 	return out;
 }
 
-void print_rdata_rrsig(dns_rr_t *rr) {
+void print_rdata_rrsig(dns_rdata_t *rdata) {
 	char sig_expiration[15];
 	char sig_inception[15];
 	LOG_PRINTF("%s %s %u %u %s %s %u %s %s\n",
-		totext(DNS_ARRAY_QTYPE, rr->rdata.rrsig.typec),
-		totext(DNSSEC_ARRAY_ALGORITHM, rr->rdata.rrsig.algnum),
-		rr->rdata.rrsig.labels,
-		rr->rdata.rrsig.original_ttl,
-		parse_timestamp(sig_expiration, sizeof(sig_expiration), rr->rdata.rrsig.signature_expiration),
-		parse_timestamp(sig_inception, sizeof(sig_inception), rr->rdata.rrsig.signature_inception),
-		rr->rdata.rrsig.key_tag,
-		rr->rdata.rrsig.signer_name,
-		rr->rdata.rrsig.signature
+		totext(DNS_ARRAY_QTYPE, rdata->rrsig.typec),
+		totext(DNSSEC_ARRAY_ALGORITHM, rdata->rrsig.algnum),
+		rdata->rrsig.labels,
+		rdata->rrsig.original_ttl,
+		parse_timestamp(sig_expiration, sizeof(sig_expiration), rdata->rrsig.signature_expiration),
+		parse_timestamp(sig_inception, sizeof(sig_inception), rdata->rrsig.signature_inception),
+		rdata->rrsig.key_tag,
+		rdata->rrsig.signer_name,
+		rdata->rrsig.signature
 	);
 }

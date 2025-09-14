@@ -4,7 +4,7 @@
 
 // Forward declarations
 typedef struct buffer buffer_t;
-typedef struct dns_rr dns_rr_t;
+typedef union dns_rdata dns_rdata_t;
 
 //
 // RRSIG
@@ -22,6 +22,6 @@ typedef struct dnssec_rrsig {
 	char *		signature;
 } dnssec_rdata_rrsig_t;
 
-int parse_rdata_rrsig(dns_rr_t *rr, buffer_t *buffer);
-void free_rdata_rrsig(dns_rr_t *rr);
-void print_rdata_rrsig(dns_rr_t *rr);
+int parse_rdata_rrsig(dns_rdata_t *rdata, buffer_t *buffer);
+void free_rdata_rrsig(dns_rdata_t *rdata);
+void print_rdata_rrsig(dns_rdata_t *rdata);

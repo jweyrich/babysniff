@@ -2,49 +2,49 @@
 #include "log.h"
 #include "types/buffer.h"
 #include "proto/dns/name.h"
-#include "proto/dns/sections/rr.h"
+#include "proto/dns/sections/rdata.h"
 #include <netinet/in.h> // for ntohs and ntohl
 
-int parse_rdata_soa(dns_rr_t *rr, buffer_t *buffer) {
-	rr->rdata.soa.mname = parse_name(buffer);
-	if (rr->rdata.soa.mname == NULL) {
+int parse_rdata_soa(dns_rdata_t *rdata, buffer_t *buffer) {
+	rdata->soa.mname = parse_name(buffer);
+	if (rdata->soa.mname == NULL) {
 		LOG_WARN("SOA mname is NULL");
 		return -1;
 	}
-	rr->rdata.soa.rname = parse_name(buffer);
-	if (rr->rdata.soa.rname == NULL) {
+	rdata->soa.rname = parse_name(buffer);
+	if (rdata->soa.rname == NULL) {
 		LOG_WARN("SOA rname is NULL");
 		return -1;
 	}
-	rr->rdata.soa.serial = buffer_read_uint32(buffer);
-	rr->rdata.soa.refresh = buffer_read_int32(buffer);
-	rr->rdata.soa.retry = buffer_read_int32(buffer);
-	rr->rdata.soa.expire = buffer_read_int32(buffer);
-	rr->rdata.soa.minimum = buffer_read_uint32(buffer);
+	rdata->soa.serial = buffer_read_uint32(buffer);
+	rdata->soa.refresh = buffer_read_int32(buffer);
+	rdata->soa.retry = buffer_read_int32(buffer);
+	rdata->soa.expire = buffer_read_int32(buffer);
+	rdata->soa.minimum = buffer_read_uint32(buffer);
 	if (buffer_has_error(buffer)) {
 		LOG_WARN("detected an error in the buffer while reading RR of type SOA");
 		return -1;
 	}
-	rr->rdata.soa.serial = ntohl(rr->rdata.soa.serial);
-	rr->rdata.soa.refresh = ntohl(rr->rdata.soa.refresh);
-	rr->rdata.soa.retry = ntohl(rr->rdata.soa.retry);
-	rr->rdata.soa.expire = ntohl(rr->rdata.soa.expire);
-	rr->rdata.soa.minimum = ntohl(rr->rdata.soa.minimum);
+	rdata->soa.serial = ntohl(rdata->soa.serial);
+	rdata->soa.refresh = ntohl(rdata->soa.refresh);
+	rdata->soa.retry = ntohl(rdata->soa.retry);
+	rdata->soa.expire = ntohl(rdata->soa.expire);
+	rdata->soa.minimum = ntohl(rdata->soa.minimum);
 	return 0;
 }
 
-void free_rdata_soa(dns_rr_t *rr) {
-    free_name(rr->rdata.soa.mname);
-	free_name(rr->rdata.soa.rname);
+void free_rdata_soa(dns_rdata_t *rdata) {
+    free_name(rdata->soa.mname);
+	free_name(rdata->soa.rname);
 }
 
-void print_rdata_soa(dns_rr_t *rr) {
+void print_rdata_soa(dns_rdata_t *rdata) {
 	LOG_PRINTF("%s %s %u %d %d %d %u\n",
-		rr->rdata.soa.mname,
-		rr->rdata.soa.rname,
-		rr->rdata.soa.serial,
-		rr->rdata.soa.refresh,
-		rr->rdata.soa.retry,
-		rr->rdata.soa.expire,
-		rr->rdata.soa.minimum);
+		rdata->soa.mname,
+		rdata->soa.rname,
+		rdata->soa.serial,
+		rdata->soa.refresh,
+		rdata->soa.retry,
+		rdata->soa.expire,
+		rdata->soa.minimum);
 }
