@@ -1,6 +1,8 @@
 #pragma once
 
 #include "proto/dns/types.h"
+#include "proto/dns/sections/question.h"
+#include "proto/dns/sections/rr.h"
 // #include "types/queue.h"
 #include <stdint.h>
 

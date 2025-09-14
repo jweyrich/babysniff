@@ -4,7 +4,6 @@
 
 // Forward declarations
 typedef struct buffer buffer_t;
-typedef struct dns_question dns_question_t;
 
 //
 // Question

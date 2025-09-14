@@ -9,7 +9,6 @@
 #include "proto/dns/sections/rdata/rrsig.h"
 #include "proto/dns/sections/rdata/soa.h"
 #include "proto/dns/sections/rdata/txt.h"
-#include "proto/dns/sections.h"
 
 // Forward declarations
 typedef struct buffer buffer_t;
