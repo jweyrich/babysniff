@@ -9,8 +9,10 @@ int parse_rdata(dns_rr_t *rr, buffer_t *buffer) {
 	switch (rr->qtype) {
 		case DNS_TYPE_A:
 			if (parse_rdata_a(&rr->rdata, buffer) != 0) return -1;
+			break;
 		case DNS_TYPE_AAAA:
 			if (parse_rdata_aaaa(&rr->rdata, buffer) != 0) return -1;
+			break;
 		case DNS_TYPE_NS:
 			if (parse_rdata_ns(&rr->rdata, buffer) != 0) return -1;
 			break;
