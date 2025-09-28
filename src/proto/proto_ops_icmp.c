@@ -1,11 +1,15 @@
-#include "config.h"
-#include "log.h"
-#include "proto_ops.h"
-#include "utils.h"
+#ifndef _DEFAULT_SOURCE
+#   define _DEFAULT_SOURCE
+#endif
 #include <arpa/inet.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/ip.h>
 #include <stdio.h>
+
+#include "config.h"
+#include "log.h"
+#include "proto_ops.h"
+#include "utils.h"
 
 int sniff_icmp_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	const struct icmp *header = (struct icmp *)packet;

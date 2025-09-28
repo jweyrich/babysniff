@@ -1,15 +1,21 @@
-#include "config.h"
-#include "log.h"
-#include "proto_ops.h"
-#include "system.h"
-#include "types/pair.h"
-#include "utils.h"
+#ifndef _DEFAULT_SOURCE
+#   define _DEFAULT_SOURCE
+#endif
 #include <arpa/inet.h>
 #include <stdio.h>
+
+#include "system.h"
 #ifdef OS_LINUX
 #	include <netinet/ether.h>
 #endif
 #include <netinet/if_ether.h>
+
+#include "config.h"
+#include "log.h"
+#include "proto_ops.h"
+
+#include "types/pair.h"
+#include "utils.h"
 
 // TODO(jweyrich): request/responses: http://64.233.163.132/search?q=cache:fTLz8j_w-0YJ:www.few.vu.nl/~cn/arp.c+arp_hln&cd=1&hl=en&ct=clnk
 

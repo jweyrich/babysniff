@@ -1,13 +1,17 @@
+#ifndef _DEFAULT_SOURCE
+#   define _DEFAULT_SOURCE
+#endif
+#include <arpa/inet.h>
+#include <netinet/tcp.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "dump.h"
 #include "log.h"
 #include "macros.h"
 #include "proto_ops.h"
 #include "system.h"
 #include "types/buffer.h"
-#include <arpa/inet.h>
-#include <netinet/tcp.h>
-#include <stdio.h>
-#include <string.h>
 
 static const char *flags_totext(uint8_t value) {
 	static char text[8 * 4]; // # of flags * length with separator

@@ -1,11 +1,12 @@
+#include <arpa/inet.h>
+#include <netinet/udp.h>
+#include <stdio.h>
+
 #include "config.h"
 #include "dump.h"
 #include "log.h"
 #include "macros.h"
 #include "proto_ops.h"
-#include <arpa/inet.h>
-#include <netinet/udp.h>
-#include <stdio.h>
 
 #define UDP_HDR_LEN 8
 

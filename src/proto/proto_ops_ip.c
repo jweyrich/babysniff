@@ -1,13 +1,17 @@
+#ifndef _DEFAULT_SOURCE
+#   define _DEFAULT_SOURCE
+#endif
+#include <arpa/inet.h>
+#include <net/ethernet.h>
+#include <netinet/ip.h>
+#include <netdb.h>
+#include <stdio.h>
+
 #include "config.h"
 #include "log.h"
 #include "macros.h"
 #include "proto_ops.h"
 #include "utils.h"
-#include <arpa/inet.h>
-#include <net/ethernet.h>
-#include <netdb.h>
-#include <netinet/ip.h>
-#include <stdio.h>
 
 // TODO(jweyrich): parse options
 // http://64.233.163.132/search?q=cache:IxxD7kq2CAAJ:www.w00w00.org/files/sectools/fragrouter/print.c+IP_OFFMASK&cd=1&hl=en&ct=clnk
