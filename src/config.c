@@ -4,18 +4,18 @@
 #include <string.h>
 
 /**
- * @brief Parse the filters flag from the command line arguments.
- * The `args->filters` member has the following format:
+ * @brief Parse the display filters flag from the command line arguments.
+ * The `args->display_filters` member has the following format:
  *   arp,dns,dns-data,eth,icmp,ip,tcp,tcp-data,udp,upd-data
  *
  * @param config  The configuration structure
  * @param args    The command line arguments
  * @return int    0 on success, <0 on error
  */
-static int config_parse_filters_flag(config_t *config, const cli_args_t *args) {
+static int config_parse_display_filters_flag(config_t *config, const cli_args_t *args) {
 	// If no filters are provided, the default is "tcp"
-	if (args->filters == NULL) {
-		config->filters_flag.tcp = true;
+	if (args->display_filters == NULL) {
+		config->display_filters_flag.tcp = true;
 		return 0;
 	}
 
@@ -26,21 +26,21 @@ static int config_parse_filters_flag(config_t *config, const cli_args_t *args) {
 	};
 
 	struct filter_flag filters_table[] = {
-		{ "arp"		, &config->filters_flag.arp, NULL },
-		{ "dns"		, &config->filters_flag.dns, NULL },
-		{ "dns-data", &config->filters_flag.dns, &config->filters_flag.dns_data },
-		{ "eth"		, &config->filters_flag.eth, NULL },
-		{ "icmp"	, &config->filters_flag.icmp, NULL },
-		{ "ip"		, &config->filters_flag.ip, NULL },
-		{ "tcp"		, &config->filters_flag.tcp, NULL },
-		{ "tcp-data", &config->filters_flag.tcp, &config->filters_flag.tcp_data },
-		{ "udp"		, &config->filters_flag.udp, NULL },
-		{ "udp-data", &config->filters_flag.udp, &config->filters_flag.udp_data },
+		{ "arp"		, &config->display_filters_flag.arp, NULL },
+		{ "dns"		, &config->display_filters_flag.dns, NULL },
+		{ "dns-data", &config->display_filters_flag.dns, &config->display_filters_flag.dns_data },
+		{ "eth"		, &config->display_filters_flag.eth, NULL },
+		{ "icmp"	, &config->display_filters_flag.icmp, NULL },
+		{ "ip"		, &config->display_filters_flag.ip, NULL },
+		{ "tcp"		, &config->display_filters_flag.tcp, NULL },
+		{ "tcp-data", &config->display_filters_flag.tcp, &config->display_filters_flag.tcp_data },
+		{ "udp"		, &config->display_filters_flag.udp, NULL },
+		{ "udp-data", &config->display_filters_flag.udp, &config->display_filters_flag.udp_data },
 	};
 
 
-	if (args->filters != NULL) {
-		char *token = strtok(args->filters, ",");
+	if (args->display_filters != NULL) {
+		char *token = strtok(args->display_filters, ",");
 		while (token != NULL) {
 			bool is_valid = false;
 			// Find the filter flag in the table and set it to true
@@ -58,7 +58,7 @@ static int config_parse_filters_flag(config_t *config, const cli_args_t *args) {
 				}
 			}
 			if (!is_valid) {
-				fprintf(stderr, "Invalid filter flag: %s\n", token);
+				fprintf(stderr, "Invalid display filter flag: %s\n", token);
 				return -1;
 			}
 			token = strtok(NULL, ",");
@@ -82,26 +82,26 @@ static void config_auto_enable_protocol_filters(config_t *config, const cli_args
     // Simple string matching to auto-enable protocol display filters
     // This makes BPF usage more intuitive for users
     if (strstr(args->bpf_filter_expr, "tcp") != NULL) {
-        config->filters_flag.tcp = true;
+        config->display_filters_flag.tcp = true;
     }
     if (strstr(args->bpf_filter_expr, "udp") != NULL) {
-        config->filters_flag.udp = true;
-        config->filters_flag.dns = true; // UDP often carries DNS
+        config->display_filters_flag.udp = true;
+        config->display_filters_flag.dns = true; // UDP often carries DNS
     }
     if (strstr(args->bpf_filter_expr, "icmp") != NULL) {
-        config->filters_flag.icmp = true;
+        config->display_filters_flag.icmp = true;
     }
     if (strstr(args->bpf_filter_expr, "port 53") != NULL) {
-        config->filters_flag.udp = true;
-        config->filters_flag.dns = true;
+        config->display_filters_flag.udp = true;
+        config->display_filters_flag.dns = true;
     }
     if (strstr(args->bpf_filter_expr, "port 80") != NULL || strstr(args->bpf_filter_expr, "port 443") != NULL) {
-        config->filters_flag.tcp = true;
+        config->display_filters_flag.tcp = true;
     }
 
     // Always enable IP and Ethernet for context
-    config->filters_flag.ip = true;
-    config->filters_flag.eth = true;
+    config->display_filters_flag.ip = true;
+    config->display_filters_flag.eth = true;
 }
 
 /**
@@ -114,7 +114,7 @@ static void config_auto_enable_protocol_filters(config_t *config, const cli_args
  */
 int config_initialize(config_t *config, const cli_args_t *args) {
     memset(config, 0, sizeof(config_t));
-    if (config_parse_filters_flag(config, args) < 0) {
+    if (config_parse_display_filters_flag(config, args) < 0) {
         return -1;
     }
 

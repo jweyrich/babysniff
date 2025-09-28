@@ -14,18 +14,18 @@
 int sniff_icmp_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	const struct icmp *header = (struct icmp *)packet;
 
-	if (config->filters_flag.icmp) {
+	if (config->display_filters_flag.icmp) {
 		LOG_PRINTF("-- ICMP (%lu bytes)\n", length);
 	}
 
 	if (length < ICMP_MINLEN || header->icmp_type > ICMP_MAXTYPE) {
-		if (config->filters_flag.icmp) {
+		if (config->display_filters_flag.icmp) {
 			LOG_PRINTF_INDENT(2, "\tinvalid packet\n");
 		}
 		return -1;
 	}
 
-	if (config->filters_flag.icmp) {
+	if (config->display_filters_flag.icmp) {
 		LOG_PRINTF_INDENT(2, "\ttype   : %u\n", header->icmp_type); // type of message
 		LOG_PRINTF_INDENT(2, "\tcode   : %u\n", header->icmp_code); // type sub code
 		LOG_PRINTF_INDENT(2, "\tcksum  : %u\n", ntohs(header->icmp_cksum)); // ones complement cksum of struct

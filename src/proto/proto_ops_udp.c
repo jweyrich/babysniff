@@ -15,7 +15,7 @@ int sniff_udp_fromwire(const uint8_t *packet, size_t length, const config_t *con
 	uint16_t sport = ntohs(header->uh_sport);
 	uint16_t dport = ntohs(header->uh_dport);
 
-	if (config->filters_flag.udp) {
+	if (config->display_filters_flag.udp) {
 		LOG_PRINTF("-- UDP (%lu bytes)\n", length);
 		LOG_PRINTF_INDENT(2,  "\tsport: %u\n", sport); // source port
 		LOG_PRINTF_INDENT(2,  "\tdport: %u\n", dport); // destination port
@@ -35,7 +35,7 @@ int sniff_udp_fromwire(const uint8_t *packet, size_t length, const config_t *con
 		sniff_dns_fromwire(packet, length, config);
 	}
 
-	if (config->filters_flag.udp_data) {
+	if (config->display_filters_flag.udp_data) {
 		LOG_PRINTF("showing %lu bytes:\n", length);
 		dump_hex(stdout, packet, length, 0);
 	}

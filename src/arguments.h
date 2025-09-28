@@ -10,7 +10,7 @@ typedef struct cli_args {
 	const char *exename;
 	int loglevel;
 	bool background;
-	char *filters;
+	char *display_filters; // Comma-separated list of protocol display filters
 	bpf_mode_t bpf_mode;
 	char *bpf_filter_expr; // BPF filter expression
 	char *interface_name;

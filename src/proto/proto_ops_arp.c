@@ -127,7 +127,7 @@ int sniff_arp_fromwire(const uint8_t *packet, size_t length, const config_t *con
 	char arp_tpa_as_str[INET_ADDRSTRLEN];
 	utils_in_addr_to_str(arp_tpa_as_str, sizeof(arp_tpa_as_str), (struct in_addr *)&header->arp_tpa);
 
-	if (config->filters_flag.arp) {
+	if (config->display_filters_flag.arp) {
 		LOG_PRINTF("-- ARP (%lu bytes)\n", length);
 		LOG_PRINTF_INDENT(2, "hrd: %u [%s]\n", arphrd, totext(ARP_ARRAY_HRD, arphrd)); // format of hardware address
 		LOG_PRINTF_INDENT(2, "pro: 0x%04x [%s]\n", arppro, totext(ARP_ARRAY_PRO, arppro)); // format of protocol address

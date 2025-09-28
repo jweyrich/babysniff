@@ -20,18 +20,18 @@ int sniff_eth_fromwire(const uint8_t *packet, size_t length, const config_t *con
 	uint16_t type = ntohs(header->ether_type);
 	uint16_t header_len = ETHER_HDR_LEN;
 
-	if (config->filters_flag.eth) {
+	if (config->display_filters_flag.eth) {
 		LOG_PRINTF("-- ETH (%lu bytes)\n", length);
 	}
 
 	if (type < ETHER_MIN_LEN) {
-		if (config->filters_flag.eth) {
+		if (config->display_filters_flag.eth) {
 			LOG_PRINTF_INDENT(2, "\tinvalid packet\n");
 		}
 		return -1;
 	}
 
-	if (config->filters_flag.eth) {
+	if (config->display_filters_flag.eth) {
 		if (type <= ETHERMTU)
 			LOG_PRINTF_INDENT(2, "\tframe: IEEE 802.3\n");
 		else
