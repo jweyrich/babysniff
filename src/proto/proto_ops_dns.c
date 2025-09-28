@@ -13,7 +13,7 @@ int sniff_dns_fromwire(const uint8_t *packet, size_t length, const config_t *con
 	buffer_t buffer = BUFFER_INITIALIZER;
 	buffer_set_data(&buffer, (uint8_t *)packet, length);
 
-	if (config->filters_flag.dns) {
+	if (config->display_filters_flag.dns) {
 		LOG_PRINTF("-- DNS (%u bytes)\n", buffer_size(&buffer));
 	}
 
@@ -21,12 +21,12 @@ int sniff_dns_fromwire(const uint8_t *packet, size_t length, const config_t *con
 	if (header == NULL) {
 		result = -1;
 	} else {
-		if (config->filters_flag.dns) {
+		if (config->display_filters_flag.dns) {
 			print_header(header);
 		}
 	}
 
-	if (config->filters_flag.dns) {
+	if (config->display_filters_flag.dns) {
 		LOG_PRINTF_INDENT(2, "QUESTION SECTION:\n");
 		for (uint16_t i=0; result == 0 && i < header->qd_c; i++) {
 			dns_question_t *section = parse_question(&buffer);
@@ -57,7 +57,7 @@ int sniff_dns_fromwire(const uint8_t *packet, size_t length, const config_t *con
 
 //	packet = (uint8_t *)PTR_ADD(packet, DNS_HDR_LEN);
 //	length -= DNS_HDR_LEN;
-	if (config->filters_flag.dns_data) {
+	if (config->display_filters_flag.dns_data) {
 		LOG_PRINTF("showing %lu bytes:\n", length);
 		dump_hex(stdout, packet, length, 0);
 	}

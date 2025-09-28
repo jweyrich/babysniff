@@ -1,13 +1,17 @@
+#ifndef _DEFAULT_SOURCE
+#   define _DEFAULT_SOURCE
+#endif
+#include <arpa/inet.h>
+#include <net/ethernet.h>
+#include <netinet/ip.h>
+#include <netdb.h>
+#include <stdio.h>
+
 #include "config.h"
 #include "log.h"
 #include "macros.h"
 #include "proto_ops.h"
 #include "utils.h"
-#include <arpa/inet.h>
-#include <net/ethernet.h>
-#include <netdb.h>
-#include <netinet/ip.h>
-#include <stdio.h>
 
 // TODO(jweyrich): parse options
 // http://64.233.163.132/search?q=cache:IxxD7kq2CAAJ:www.w00w00.org/files/sectools/fragrouter/print.c+IP_OFFMASK&cd=1&hl=en&ct=clnk
@@ -19,12 +23,12 @@ int sniff_ip_fromwire(const uint8_t *packet, size_t length, const config_t *conf
 	uint16_t header_len = header->ip_hl << 2;
 	uint16_t ip_len = ntohs(header->ip_len);
 
-	if (config->filters_flag.ip) {
+	if (config->display_filters_flag.ip) {
 		LOG_PRINTF("-- IP (%lu bytes)\n", length);
 	}
 
 	if (length != ip_len) {
-		if (config->filters_flag.ip) {
+		if (config->display_filters_flag.ip) {
 			LOG_PRINTF_INDENT(2, "\tinvalid packet\n");
 		}
 		return -1;
@@ -36,7 +40,7 @@ int sniff_ip_fromwire(const uint8_t *packet, size_t length, const config_t *conf
 	char ip_dst_as_str[INET_ADDRSTRLEN];
 	utils_in_addr_to_str(ip_dst_as_str, sizeof(ip_dst_as_str), &header->ip_dst);
 
-	if (config->filters_flag.ip) {
+	if (config->display_filters_flag.ip) {
 		LOG_PRINTF_INDENT(2, "\tv  : %u\n", header->ip_v); // version
 		LOG_PRINTF_INDENT(2, "\thl : %u\n", header->ip_hl); // header length
 		LOG_PRINTF_INDENT(2, "\ttos: 0x%x\n", header->ip_tos); // type of service
@@ -52,7 +56,7 @@ int sniff_ip_fromwire(const uint8_t *packet, size_t length, const config_t *conf
 
 	// fragmented?
 	if ((header->ip_off & IP_MF) != 0) {
-		if (config->filters_flag.ip) {
+		if (config->display_filters_flag.ip) {
 			LOG_PRINTF_INDENT(2, "\tfragmented\n");
 		}
 		return -1;

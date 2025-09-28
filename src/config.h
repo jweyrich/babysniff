@@ -15,7 +15,7 @@ typedef struct config {
         bool tcp_data;
         bool udp;
         bool udp_data;
-    } filters_flag;
+    } display_filters_flag;
 } config_t;
 
 int config_initialize(config_t *config, const cli_args_t *args);

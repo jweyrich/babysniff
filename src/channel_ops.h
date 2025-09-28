@@ -28,4 +28,8 @@ int sniff_readloop(channel_t *channel, long timeout, const config_t *config);
 int sniff_channel_set_error_msg(channel_t *channel, const char *format, ...);
 const char *sniff_channel_get_error_msg(channel_t *channel);
 
-// TODO(jweyrich): add error codes and subsequent functions
+// BPF filter functions
+int sniff_channel_set_bpf_filter(channel_t *channel, bpf_mode_t bpf_mode, const char *filter_expression);
+void sniff_channel_clear_bpf_filter(channel_t *channel);
+int sniff_channel_attach_filter(channel_t *channel);
+int sniff_channel_apply_bpf_filter(channel_t *channel, const uint8_t *packet, uint32_t packet_len);

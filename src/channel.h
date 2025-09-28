@@ -1,6 +1,8 @@
 #pragma once
 
 #include "channel_ops_common.h"
+#include "bpf/bpf_filter.h"
+#include "bpf/bpf_types.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -14,6 +16,11 @@ typedef struct sniff_channel_opts {
 	int promisc;
 } sniff_channel_opts_t;
 
+typedef struct channel_bpf_filter {
+	bpf_mode_t mode;
+	bpf_program_t program;
+} channel_bpf_filter_t;
+
 typedef struct sniff_channel {
 	int fd;
 	char *ifname; // interface name
@@ -21,13 +28,14 @@ typedef struct sniff_channel {
 	uint8_t *buffer; // read buffer
 	char errmsg[SNIFF_ERR_BUFSIZE];
 	sniff_channel_opts_t opts;
+	channel_bpf_filter_t *bpf_filter;
 } channel_t;
 
 //
 // Initialization
 //
 #define CHANNEL_INITIALIZER \
-	{ -1, NULL, 0, NULL, { '\0' }, { 0 } }
+	{ -1, NULL, 0, NULL, { '\0' }, { 0 }, { 0, NULL }, 0 }
 #define CHANNEL_INIT(var) \
 	do { \
 		channel_t *ptr = (var); \
@@ -37,6 +45,7 @@ typedef struct sniff_channel {
 		ptr->buffer = NULL; \
 		memset(ptr->errmsg, 0, sizeof(SNIFF_ERR_BUFSIZE)); \
 		ptr->opts.promisc = 0; \
+		ptr->bpf_filter = NULL; \
 	} while (0)
 
 //

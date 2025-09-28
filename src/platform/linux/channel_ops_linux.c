@@ -1,3 +1,6 @@
+#ifndef _GNU_SOURCE
+#	define _GNU_SOURCE
+#endif
 #include "channel_ops_common.h"
 #include "channel_ops.h"
 #include "config.h"
@@ -9,18 +12,18 @@
 #include <features.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
-//#include <net/ethernet.h>
 #include <net/if.h>
+#include <netinet/in.h>
+//#include <net/ethernet.h>
 //#include <netdb.h>
 //#include <netinet/if_ether.h>
 //#include <netinet/in_systm.h>
 //#include <netinet/in_systm.h>
-//#include <netinet/in.h>
 //#include <netinet/ip_icmp.h>
 //#include <netinet/ip.h>
 //#include <netinet/tcp.h>
 //#include <netinet/udp.h>
-//#include <sys/types.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -179,7 +182,12 @@ int sniff_readloop(channel_t *channel, long timeout, const config_t *config) {
 			while (begin < end) {
 				//header = (struct eth_hdr *)begin;
 				current = begin; // Point to the start of the received buffer because it's not encapsulated.
-				sniff_packet_fromwire(current, bytes_read, 0, config);
+
+				// Apply BPF filter if set
+				if (sniff_channel_apply_bpf_filter(channel, current, bytes_read)) {
+					sniff_packet_fromwire(current, bytes_read, 0, config);
+				}
+
 				begin += bytes_read;
 			}
 		}

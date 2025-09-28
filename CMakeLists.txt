@@ -9,6 +9,7 @@ project(babysniff
 file(GLOB babysniff_srcs RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "src/*.c"
     "src/compat/*.c"
+    "src/bpf/*.c"
     "src/platform/shared/*.c"
     "src/proto/*.c"
     "src/proto/dns/*.c"

@@ -1,13 +1,17 @@
+#ifndef _DEFAULT_SOURCE
+#   define _DEFAULT_SOURCE
+#endif
+#include <arpa/inet.h>
+#include <netinet/tcp.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "dump.h"
 #include "log.h"
 #include "macros.h"
 #include "proto_ops.h"
 #include "system.h"
 #include "types/buffer.h"
-#include <arpa/inet.h>
-#include <netinet/tcp.h>
-#include <stdio.h>
-#include <string.h>
 
 static const char *flags_totext(uint8_t value) {
 	static char text[8 * 4]; // # of flags * length with separator
@@ -37,12 +41,12 @@ int sniff_tcp_fromwire(const uint8_t *packet, size_t length, const config_t *con
 	const struct tcphdr *header = (struct tcphdr *)packet;
 	uint16_t header_len = header->th_off * 4;
 
-	if (config->filters_flag.tcp) {
+	if (config->display_filters_flag.tcp) {
 		LOG_PRINTF("-- TCP (%lu bytes)\n", length);
 	}
 
 	if (length < header_len) {
-		if (config->filters_flag.tcp) {
+		if (config->display_filters_flag.tcp) {
 			LOG_PRINTF_INDENT(2, "\tinvalid packet\n");
 		}
 		return -1;
@@ -51,7 +55,7 @@ int sniff_tcp_fromwire(const uint8_t *packet, size_t length, const config_t *con
 	uint16_t sport = ntohs(header->th_sport);
 	uint16_t dport = ntohs(header->th_dport);
 
-	if (config->filters_flag.tcp) {
+	if (config->display_filters_flag.tcp) {
 		LOG_PRINTF_INDENT(2, "\tsport: %u\n", sport); // source port
 		LOG_PRINTF_INDENT(2, "\tdport: %u\n", dport); // destination port
 		LOG_PRINTF_INDENT(2, "\tseq  : %u\n", ntohl(header->th_seq)); // sequence number
@@ -82,7 +86,7 @@ int sniff_tcp_fromwire(const uint8_t *packet, size_t length, const config_t *con
 		}
 	}
 
-	if (config->filters_flag.tcp_data) {
+	if (config->display_filters_flag.tcp_data) {
 		LOG_PRINTF("showing %lu bytes:\n", length);
 		dump_hex(stdout, packet, length, 0);
 	}
