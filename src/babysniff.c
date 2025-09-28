@@ -72,12 +72,12 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	if (!args.foreground)
+	if (args.background)
 		daemonize(&args);
 
 	install_sighandlers();
 
-	if (!args.foreground) {
+	if (args.background) {
 		// Redirect std{in|err|out} to /dev/null
 		int nullfd = open("/dev/null", O_RDWR);
 		dup2(nullfd, STDOUT_FILENO);

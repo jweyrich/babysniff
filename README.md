@@ -33,7 +33,7 @@ make
 The superuser privilege is necessary because Linux and BSD systems require elevated privileges to enable the promiscuous mode in network interfaces.
 
 ```shell
-sudo ./babysniff -f -i eth0 -F arp,icmp,tcp,udp
+sudo ./babysniff -i eth0 -F arp,icmp,tcp,udp
 ```
 
 ## Screenshots

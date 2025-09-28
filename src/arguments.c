@@ -13,7 +13,7 @@ void usage(const cli_args_t *args) {
 	const char *usage_format = "Usage: %s [OPTIONS]\n"
 		"  -l #, --loglevel=#          Set the daemon's log level.\n"
 		"                              Debugging is more verbose with a higher debug level.\n"
-		"  -f, --foreground            Run the server in the foreground (do not daemonize).\n"
+		"  -b, --background            Run in background (daemonize).\n"
 		"  -F, --filters=" UNDER("filters") "       Specify a list of filters separated by comma. Example: udp,dns\n"
 		"                              The supported filters are:\n"
 		"                                arp\n"
@@ -67,7 +67,7 @@ const char *get_opt_string(const struct option *options) {
 int parse_arguments(cli_args_t *args, int argc, char **argv) {
 	static const struct option options[] = {
 		{ "loglevel",	required_argument,	NULL, 'l' },
-		{ "foreground",	no_argument,		NULL, 'f' },
+		{ "background",	no_argument,		NULL, 'b' },
 		{ "filter",		required_argument,	NULL, 'F' },
 		{ "bpf-emulator", no_argument,		NULL, 'E' },
 		{ "bpf",		required_argument,	NULL, 'B' },
@@ -94,7 +94,7 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 				args->loglevel = atoi(optarg);
 				log_level_set(args->loglevel);
 				break;
-			case 'f': args->foreground = true; break;
+			case 'b': args->background = true; break;
 			case 'F': args->filters = optarg; break;
 			case 'E': args->bpf_mode = EMULATED_BPF; break;
 			case 'B': args->bpf_filter_expr = optarg; break;

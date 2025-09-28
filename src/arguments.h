@@ -9,7 +9,7 @@ typedef struct cli_args {
 	char **argv;
 	const char *exename;
 	int loglevel;
-	bool foreground;
+	bool background;
 	char *filters;
 	bpf_mode_t bpf_mode;
 	char *bpf_filter_expr; // BPF filter expression
