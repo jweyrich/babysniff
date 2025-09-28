@@ -4,6 +4,17 @@
 #include <stdbool.h>
 #include <netinet/in.h>
 
+// Include system BPF headers when available
+#ifdef __linux__
+    #include <linux/filter.h>
+    // Linux compatibility: we'll define our own structures below
+#elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+    #include <net/bpf.h>
+    // BSD systems (including macOS) have bpf_insn and bpf_program natively
+    #define HAVE_BPF_INSN 1
+    #define HAVE_BPF_PROGRAM 1
+#endif
+
 //
 // Reference man-page:
 // name: "bpf -- Berkeley Packet Filter"
@@ -14,19 +25,24 @@
 // url : http://www.tcpdump.org/papers/bpf-usenix93.pdf
 //
 
-// BPF instruction structure (based on Linux kernel BPF)
+// Define our unified BPF structures (used on Linux and as fallback)
+#ifndef HAVE_BPF_INSN
 struct bpf_insn {
     uint16_t code;    // Instruction opcode
     uint8_t  jt;      // Jump true
     uint8_t  jf;      // Jump false
     uint32_t k;       // Generic multiuse field
 };
+#endif
 
-// BPF program structure
-typedef struct bpf_program {
-    unsigned short bf_len;         // Number of instructions
+#ifndef HAVE_BPF_PROGRAM
+struct bpf_program {
+    unsigned int bf_len;           // Number of instructions
     struct bpf_insn *bf_insns;     // Pointer to array of instructions
-} bpf_program_t;
+};
+#endif
+
+typedef struct bpf_program bpf_program_t;
 
 // BPF opcodes (simplified subset for packet filtering)
 #define BPF_CLASS(code) ((code) & 0x07)

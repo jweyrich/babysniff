@@ -11,7 +11,7 @@
 
 int bsd_bpf_attach_filter(channel_t *channel) {
 	// TODO(jweyrich): Drain packets that arrived before the filter was set! See https://natanyellin.com/posts/ebpf-filtering-done-right/
-	if (ioctl(bpf_fd, BIOCSETF, &channel->bpf_filter->program) < 0) {
+	if (ioctl(channel->fd, BIOCSETF, &channel->bpf_filter->program) < 0) {
 		snprintf(channel->errmsg, SNIFF_ERR_BUFSIZE, "BIOCSETF: %s", sniff_strerror(errno));
 		return -1;
 	}
