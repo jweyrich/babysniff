@@ -83,8 +83,12 @@ int main(int argc, char **argv) {
 	channel_t *channel = sniff_open(args.interface_name, 0, 0);
 	if (channel == NULL)
 		return EXIT_FAILURE;
-	if (sniff_setnonblock(channel, 1) < 0)
+	
+	if (sniff_setnonblock(channel, 1) < 0) {
+		fprintf(stderr, "Error setting non-blocking mode: %s\n", sniff_channel_get_error_msg(channel));
+		sniff_close(channel);
 		return EXIT_FAILURE;
+	}
 
 	if (args.chrootdir != NULL) {
 		if (security_force_chroot(args.chrootdir) < 0)
