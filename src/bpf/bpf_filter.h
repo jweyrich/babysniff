@@ -24,7 +24,7 @@ struct bpf_insn {
 
 // BPF program structure
 typedef struct bpf_program {
-    unsigned int bf_len;           // Number of instructions
+    unsigned short bf_len;         // Number of instructions
     struct bpf_insn *bf_insns;     // Pointer to array of instructions
 } bpf_program_t;
 

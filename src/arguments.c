@@ -24,6 +24,7 @@ void usage(const cli_args_t *args) {
 		"                                tcp | tcp-data\n"
 		"                                udp | udp-data\n"
 		"                              If not provided, the default is " UNDER("tcp") ".\n"
+		"  -E, --bpf-emulator          Use the BPF emulator instead of the kernel's native BPF.\n"
 		"  -B, --bpf=" UNDER("expression") "        Specify a BPF filter expression (tcpdump-style).\n"
 		"                              Examples: 'host 192.168.1.1', 'port 80', 'tcp'\n"
 		"                              BPF filters are applied before protocol filters.\n"
@@ -68,6 +69,7 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 		{ "loglevel",	required_argument,	NULL, 'l' },
 		{ "foreground",	no_argument,		NULL, 'f' },
 		{ "filter",		required_argument,	NULL, 'F' },
+		{ "bpf-emulator", no_argument,		NULL, 'E' },
 		{ "bpf",		required_argument,	NULL, 'B' },
 		{ "interface",  required_argument,  NULL, 'i' },
 		{ "chrootdir",	required_argument,	NULL, 't' },
@@ -81,6 +83,7 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 	args->argv = argv;
 	args->exename = strrchr(argv[0], '/');
 	args->exename = (args->exename != NULL) ? args->exename+1 : argv[0];
+	args->bpf_mode = NATIVE_BPF; // Default to native BPF
 	while (1) {
 		int opt_index = 0;
 		int opt = getopt_long(argc, argv, get_opt_string(options), options, &opt_index);
@@ -93,7 +96,8 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 				break;
 			case 'f': args->foreground = true; break;
 			case 'F': args->filters = optarg; break;
-			case 'B': args->bpf_filter = optarg; break;
+			case 'E': args->bpf_mode = EMULATED_BPF; break;
+			case 'B': args->bpf_filter_expr = optarg; break;
 			case 'i': args->interface_name = optarg; break;
 			case 't': args->chrootdir = optarg; break;
 			case 'u': args->username = optarg; break;

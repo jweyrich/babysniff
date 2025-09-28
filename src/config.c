@@ -75,27 +75,27 @@ static int config_parse_filters_flag(config_t *config, const cli_args_t *args) {
  * @param args    The command line arguments
  */
 static void config_auto_enable_protocol_filters(config_t *config, const cli_args_t *args) {
-    if (args->bpf_filter == NULL) {
+    if (args->bpf_filter_expr == NULL) {
         return; // No BPF filter, nothing to do
     }
 
     // Simple string matching to auto-enable protocol display filters
     // This makes BPF usage more intuitive for users
-    if (strstr(args->bpf_filter, "tcp") != NULL) {
+    if (strstr(args->bpf_filter_expr, "tcp") != NULL) {
         config->filters_flag.tcp = true;
     }
-    if (strstr(args->bpf_filter, "udp") != NULL) {
+    if (strstr(args->bpf_filter_expr, "udp") != NULL) {
         config->filters_flag.udp = true;
         config->filters_flag.dns = true; // UDP often carries DNS
     }
-    if (strstr(args->bpf_filter, "icmp") != NULL) {
+    if (strstr(args->bpf_filter_expr, "icmp") != NULL) {
         config->filters_flag.icmp = true;
     }
-    if (strstr(args->bpf_filter, "port 53") != NULL) {
+    if (strstr(args->bpf_filter_expr, "port 53") != NULL) {
         config->filters_flag.udp = true;
         config->filters_flag.dns = true;
     }
-    if (strstr(args->bpf_filter, "port 80") != NULL || strstr(args->bpf_filter, "port 443") != NULL) {
+    if (strstr(args->bpf_filter_expr, "port 80") != NULL || strstr(args->bpf_filter_expr, "port 443") != NULL) {
         config->filters_flag.tcp = true;
     }
 

@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "bpf/bpf_types.h"
 
 typedef struct cli_args {
 	int argc;
@@ -10,7 +11,8 @@ typedef struct cli_args {
 	int loglevel;
 	bool foreground;
 	char *filters;
-	char *bpf_filter; // BPF filter expression
+	bpf_mode_t bpf_mode;
+	char *bpf_filter_expr; // BPF filter expression
 	char *interface_name;
 	char *chrootdir;
 	char *username;

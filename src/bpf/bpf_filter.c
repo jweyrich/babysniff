@@ -1,7 +1,8 @@
 #ifndef _DEFAULT_SOURCE
 #   define _DEFAULT_SOURCE
 #endif
-#include "bpf_filter.h"
+
+#include "bpf/bpf_filter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
