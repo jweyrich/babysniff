@@ -39,3 +39,41 @@ int sniff_channel_set_error_msg(channel_t *channel, const char *format, ...) {
 const char *sniff_channel_get_error_msg(channel_t *channel) {
 	return channel->errmsg;
 }
+
+// BPF filter functions
+int sniff_channel_set_bpf_filter(channel_t *channel, const char *filter_expression) {
+	if (!channel || !filter_expression) {
+		return -1;
+	}
+
+	// Clear any existing filter
+	sniff_channel_clear_bpf_filter(channel);
+
+	// Compile the new filter
+	if (bpf_compile_filter(filter_expression, &channel->bpf_filter) < 0) {
+		sniff_channel_set_error_msg(channel, "Failed to compile BPF filter: %s", filter_expression);
+		return -1;
+	}
+
+	channel->has_bpf_filter = true;
+	return 0;
+}
+
+void sniff_channel_clear_bpf_filter(channel_t *channel) {
+	if (channel && channel->has_bpf_filter) {
+		bpf_free_program(&channel->bpf_filter);
+		channel->has_bpf_filter = false;
+	}
+}
+
+int sniff_channel_apply_bpf_filter(channel_t *channel, const uint8_t *packet, uint32_t packet_len) {
+	if (!channel || !packet) {
+		return 0; // Reject invalid input
+	}
+
+	if (!channel->has_bpf_filter) {
+		return 1; // Accept all packets if no filter is set
+	}
+
+	return bpf_execute_filter(&channel->bpf_filter, packet, packet_len);
+}

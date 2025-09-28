@@ -10,6 +10,7 @@ typedef struct cli_args {
 	int loglevel;
 	bool foreground;
 	char *filters;
+	char *bpf_filter; // BPF filter expression
 	char *interface_name;
 	char *chrootdir;
 	char *username;

@@ -179,7 +179,12 @@ int sniff_readloop(channel_t *channel, long timeout, const config_t *config) {
 			while (begin < end) {
 				//header = (struct eth_hdr *)begin;
 				current = begin; // Point to the start of the received buffer because it's not encapsulated.
-				sniff_packet_fromwire(current, bytes_read, 0, config);
+
+				// Apply BPF filter if set
+				if (sniff_channel_apply_bpf_filter(channel, current, bytes_read)) {
+					sniff_packet_fromwire(current, bytes_read, 0, config);
+				}
+
 				begin += bytes_read;
 			}
 		}

@@ -24,6 +24,9 @@ void usage(const cli_args_t *args) {
 		"                                tcp | tcp-data\n"
 		"                                udp | udp-data\n"
 		"                              If not provided, the default is " UNDER("tcp") ".\n"
+		"  -B, --bpf=" UNDER("expression") "        Specify a BPF filter expression (tcpdump-style).\n"
+		"                              Examples: 'host 192.168.1.1', 'port 80', 'tcp'\n"
+		"                              BPF filters are applied before protocol filters.\n"
 		"  -i, --interface             Specify which interface to inspect.\n"
 		"  -t, --chrootdir=" UNDER("directory") "   Chroot to " UNDER("directory") " after processing the command line arguments.\n"
 		"  -u, --user=" UNDER("name") "             Change the user to " UNDER("name") " after completing privileged operations, \n"
@@ -65,6 +68,7 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 		{ "loglevel",	required_argument,	NULL, 'l' },
 		{ "foreground",	no_argument,		NULL, 'f' },
 		{ "filter",		required_argument,	NULL, 'F' },
+		{ "bpf",		required_argument,	NULL, 'B' },
 		{ "interface",  required_argument,  NULL, 'i' },
 		{ "chrootdir",	required_argument,	NULL, 't' },
 		{ "username",	required_argument,	NULL, 'u' },
@@ -89,6 +93,7 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 				break;
 			case 'f': args->foreground = true; break;
 			case 'F': args->filters = optarg; break;
+			case 'B': args->bpf_filter = optarg; break;
 			case 'i': args->interface_name = optarg; break;
 			case 't': args->chrootdir = optarg; break;
 			case 'u': args->username = optarg; break;

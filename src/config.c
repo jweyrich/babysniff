@@ -68,6 +68,43 @@ static int config_parse_filters_flag(config_t *config, const cli_args_t *args) {
 }
 
 /**
+ * @brief Automatically enable protocol display filters based on BPF filter
+ * This makes BPF filters more user-friendly by automatically showing relevant protocols
+ *
+ * @param config  The configuration structure
+ * @param args    The command line arguments
+ */
+static void config_auto_enable_protocol_filters(config_t *config, const cli_args_t *args) {
+    if (args->bpf_filter == NULL) {
+        return; // No BPF filter, nothing to do
+    }
+
+    // Simple string matching to auto-enable protocol display filters
+    // This makes BPF usage more intuitive for users
+    if (strstr(args->bpf_filter, "tcp") != NULL) {
+        config->filters_flag.tcp = true;
+    }
+    if (strstr(args->bpf_filter, "udp") != NULL) {
+        config->filters_flag.udp = true;
+        config->filters_flag.dns = true; // UDP often carries DNS
+    }
+    if (strstr(args->bpf_filter, "icmp") != NULL) {
+        config->filters_flag.icmp = true;
+    }
+    if (strstr(args->bpf_filter, "port 53") != NULL) {
+        config->filters_flag.udp = true;
+        config->filters_flag.dns = true;
+    }
+    if (strstr(args->bpf_filter, "port 80") != NULL || strstr(args->bpf_filter, "port 443") != NULL) {
+        config->filters_flag.tcp = true;
+    }
+
+    // Always enable IP and Ethernet for context
+    config->filters_flag.ip = true;
+    config->filters_flag.eth = true;
+}
+
+/**
  * @brief Initialize the configuration structure.
  * It will parse the filter flags from the command line arguments.
  *
@@ -80,5 +117,9 @@ int config_initialize(config_t *config, const cli_args_t *args) {
     if (config_parse_filters_flag(config, args) < 0) {
         return -1;
     }
+
+    // Auto-enable protocol display filters based on BPF filter
+    config_auto_enable_protocol_filters(config, args);
+
     return 0;
 }

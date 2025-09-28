@@ -90,6 +90,16 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
+	// Set BPF filter if provided
+	if (args.bpf_filter != NULL) {
+		if (sniff_channel_set_bpf_filter(channel, args.bpf_filter) < 0) {
+			fprintf(stderr, "Error setting BPF filter: %s\n", sniff_channel_get_error_msg(channel));
+			sniff_close(channel);
+			return EXIT_FAILURE;
+		}
+		printf("Applied BPF filter: %s\n", args.bpf_filter);
+	}
+
 	if (args.chrootdir != NULL) {
 		if (security_force_chroot(args.chrootdir) < 0)
 			return EXIT_FAILURE;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "channel_ops_common.h"
+#include "bpf_filter.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -21,13 +22,15 @@ typedef struct sniff_channel {
 	uint8_t *buffer; // read buffer
 	char errmsg[SNIFF_ERR_BUFSIZE];
 	sniff_channel_opts_t opts;
+	bpf_program_t bpf_filter; // BPF filter program
+	bool has_bpf_filter; // Flag indicating if BPF filter is active
 } channel_t;
 
 //
 // Initialization
 //
 #define CHANNEL_INITIALIZER \
-	{ -1, NULL, 0, NULL, { '\0' }, { 0 } }
+	{ -1, NULL, 0, NULL, { '\0' }, { 0 }, { 0, NULL }, 0 }
 #define CHANNEL_INIT(var) \
 	do { \
 		channel_t *ptr = (var); \
@@ -37,6 +40,9 @@ typedef struct sniff_channel {
 		ptr->buffer = NULL; \
 		memset(ptr->errmsg, 0, sizeof(SNIFF_ERR_BUFSIZE)); \
 		ptr->opts.promisc = 0; \
+		ptr->bpf_filter.bf_len = 0; \
+		ptr->bpf_filter.bf_insns = NULL; \
+		ptr->has_bpf_filter = 0; \
 	} while (0)
 
 //
