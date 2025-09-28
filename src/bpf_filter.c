@@ -1,5 +1,5 @@
-#ifndef _GNU_SOURCE
-#   define _GNU_SOURCE
+#ifndef _DEFAULT_SOURCE
+#   define _DEFAULT_SOURCE
 #endif
 #include "bpf_filter.h"
 #include <stdio.h>
@@ -7,6 +7,7 @@
 #include <string.h>
 #include <strings.h>
 #include <arpa/inet.h>
+#include <netinet/ip.h>
 #include <netdb.h>
 #include <errno.h>
 #include <ctype.h>
@@ -19,11 +20,14 @@
 #define BPF_TAX           0x00            // Transfer A to X
 #define BPF_TXA           0x80            // Transfer X to A
 
+// BPF virtual machine stack size
+#define BPF_VM_STACK_SIZE   16
+
 // BPF virtual machine state
 typedef struct {
-    uint32_t A;               // Accumulator
-    uint32_t X;               // Index register
-    uint32_t M[BPF_MEMWORDS]; // Memory store (16 slots)
+    uint32_t A;                     // Accumulator
+    uint32_t X;                     // Index register
+    uint32_t M[BPF_VM_STACK_SIZE];  // Memory store (16 slots)
 } bpf_vm_state_t;
 
 // Helper function to safely read from packet
@@ -91,7 +95,7 @@ int bpf_execute_filter(const bpf_program_t *program, const uint8_t *packet, uint
                         vm.A = packet_len;
                         break;
                     case BPF_MEM:
-                        if (insn->k < BPF_MEMWORDS) {
+                        if (insn->k < BPF_VM_STACK_SIZE) {
                             vm.A = vm.M[insn->k];
                         }
                         break;
@@ -107,7 +111,7 @@ int bpf_execute_filter(const bpf_program_t *program, const uint8_t *packet, uint
                         vm.X = packet_len;
                         break;
                     case BPF_MEM:
-                        if (insn->k < BPF_MEMWORDS) {
+                        if (insn->k < BPF_VM_STACK_SIZE) {
                             vm.X = vm.M[insn->k];
                         }
                         break;
@@ -118,13 +122,13 @@ int bpf_execute_filter(const bpf_program_t *program, const uint8_t *packet, uint
                 break;
 
             case BPF_ST:
-                if (insn->k < BPF_MEMWORDS) {
+                if (insn->k < BPF_VM_STACK_SIZE) {
                     vm.M[insn->k] = vm.A;
                 }
                 break;
 
             case BPF_STX:
-                if (insn->k < BPF_MEMWORDS) {
+                if (insn->k < BPF_VM_STACK_SIZE) {
                     vm.M[insn->k] = vm.X;
                 }
                 break;
@@ -276,70 +280,69 @@ int bpf_create_host_filter(const char *host, bpf_program_t *program) {
         return -1;
     }
 
-    // Allocate instructions for host filter
-    program->bf_len = 8;
+    uint32_t host_ip = ntohl(addr.s_addr);
+
+    const struct bpf_insn instns[] = {
+        BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 12),                    // Load EtherType
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, ETHERTYPE_IP, 0, 6),   // If not IP, jump to reject
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, IP_SRC_OFFSET),         // Load src IP
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, 3, 0, host_ip),        // If src IP matches, jump to accept
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, IP_DST_OFFSET),         // Load dst IP
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, 1, 0, host_ip),        // If dst IP matches, jump to accept
+        BPF_STMT(BPF_RET | BPF_K, 0),                              // Reject
+        BPF_STMT(BPF_RET | BPF_K, 0xffff),                         // Accept
+    };
+
+    // Allocate instructions
+    program->bf_len = sizeof(instns) / sizeof(instns[0]);
     program->bf_insns = calloc(program->bf_len, sizeof(struct bpf_insn));
     if (!program->bf_insns) {
         return -1;
     }
-
-    uint32_t host_ip = ntohl(addr.s_addr);
-
-    // Load IP protocol from Ethernet frame
-    program->bf_insns[0] = (struct bpf_insn){BPF_LD | BPF_H | BPF_ABS, 0, 0, 12}; // Load EtherType
-    program->bf_insns[1] = (struct bpf_insn){BPF_JMP | BPF_JEQ | BPF_K, 0, 6, ETHERTYPE_IP}; // Jump if not IP
-
-    // Check source IP
-    program->bf_insns[2] = (struct bpf_insn){BPF_LD | BPF_W | BPF_ABS, 0, 0, IP_SRC_OFFSET}; // Load src IP
-    program->bf_insns[3] = (struct bpf_insn){BPF_JMP | BPF_JEQ | BPF_K, 3, 0, host_ip}; // Jump if match (to instruction 7)
-
-    // Check destination IP
-    program->bf_insns[4] = (struct bpf_insn){BPF_LD | BPF_W | BPF_ABS, 0, 0, IP_DST_OFFSET}; // Load dst IP
-    program->bf_insns[5] = (struct bpf_insn){BPF_JMP | BPF_JEQ | BPF_K, 1, 0, host_ip}; // Jump if match (to instruction 7)
-
-    program->bf_insns[6] = (struct bpf_insn){BPF_RET | BPF_K, 0, 0, 0}; // Reject
-    program->bf_insns[7] = (struct bpf_insn){BPF_RET | BPF_K, 0, 0, 0xffffffff}; // Accept
-
+    
+    memcpy(program->bf_insns, instns, sizeof(instns));
     return 0;
 }
 
-// Create a port filter (matches src or dst port for TCP/UDP)
+// Create a port filter (matches src or dst port for SCTP/TCP/UDP)
 int bpf_create_port_filter(uint16_t port, bpf_program_t *program) {
     // FIXME(jweyrich): This is a very naive port filter implementation which makes an assumption about the IP header size.
     // Simplified port filter - assumes standard 20-byte IP header for now
-    // This makes the filter much more reliable and easier to debug
-    program->bf_len = 13;
+    const struct bpf_insn instns[] = {
+        BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 12),                    // 0x28: load half-word at offset 12 (ethertype)
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, ETHERTYPE_IPV6, 0, 8), // 0x15: if IPv6, skip next 8 instructions
+        BPF_STMT(BPF_LD | BPF_B | BPF_ABS, 20),                    // 0x30: load byte at offset 20 (IPv6 next header)
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, IPPROTO_SCTP, 2, 0),   // 0x15: if SCTP, jump 2 instructions
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, IPPROTO_TCP, 1, 0),    // 0x15: if TCP, jump 1 instruction
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, IPPROTO_UDP, 0, 17),   // 0x15: if UDP, skip next 17 instructions
+        BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 54),                    // 0x28: load half-word at offset 54 (src port)
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, port, 14, 0),          // 0x15: if port matches, jump 14 instructions
+        BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 56),                    // 0x28: load half-word at offset 56 (dst port)
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, port, 12, 13),         // 0x15: if port matches, jump 12, else jump 13
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, ETHERTYPE_IP, 0, 12),  // 0x15: if IPv4, skip next 12 instructions
+        BPF_STMT(BPF_LD | BPF_B | BPF_ABS, IP_PROTO_OFFSET),       // 0x30: load byte at offset 23 (IPv4 protocol)
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, IPPROTO_SCTP, 2, 0),   // 0x15: if SCTP, jump 2 instructions
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, IPPROTO_TCP, 1, 0),    // 0x15: if TCP, jump 1 instruction
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, IPPROTO_UDP, 0, 8),    // 0x15: if UDP, skip next 8 instructions
+        BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 20),                    // 0x28: load half-word at offset 20 (IP header)
+        BPF_JUMP(BPF_JMP | BPF_JSET | BPF_K, IP_OFFMASK, 6, 0),    // 0x45: if fragmented, jump 6 instructions
+        BPF_STMT(BPF_LDX | BPF_B | BPF_MSH, 14),                   // 0xb1: load IP header length
+        BPF_STMT(BPF_LD | BPF_H | BPF_IND, 14),                    // 0x48: load half-word at X+14 (src port)
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, port, 2, 0),           // 0x15: if port matches, jump 2 instructions
+        BPF_STMT(BPF_LD | BPF_H | BPF_IND, 16),                    // 0x48: load half-word at X+16 (dst port)
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, port, 0, 1),           // 0x15: if port matches, skip next instruction
+        BPF_STMT(BPF_RET | BPF_K, 0xffff),                         // 0x06: return 65535 (accept packet)
+        BPF_STMT(BPF_RET | BPF_K, 0),                              // 0x06: return 0 (reject packet)
+    };
+
+    // Allocate instructions
+    program->bf_len = sizeof(instns) / sizeof(instns[0]);
     program->bf_insns = calloc(program->bf_len, sizeof(struct bpf_insn));
     if (!program->bf_insns) {
         return -1;
     }
 
-    // Check if packet is IP
-    program->bf_insns[0] = (struct bpf_insn){BPF_LD | BPF_H | BPF_ABS, 0, 0, 12}; // Load EtherType
-    program->bf_insns[1] = (struct bpf_insn){BPF_JMP | BPF_JEQ | BPF_K, 0, 11, ETHERTYPE_IP}; // Jump to reject if not IP
-
-    // Check if protocol is TCP or UDP
-    program->bf_insns[2] = (struct bpf_insn){BPF_LD | BPF_B | BPF_ABS, 0, 0, IP_PROTO_OFFSET}; // Load protocol
-    program->bf_insns[3] = (struct bpf_insn){BPF_JMP | BPF_JEQ | BPF_K, 1, 0, 6}; // Jump ahead if TCP
-    program->bf_insns[4] = (struct bpf_insn){BPF_JMP | BPF_JEQ | BPF_K, 0, 7, 17}; // Jump ahead if UDP, else reject
-
-    // TCP/UDP port checks (assuming 20-byte IP header, so ports start at offset 34)
-    // Check source port
-    program->bf_insns[5] = (struct bpf_insn){BPF_LD | BPF_H | BPF_ABS, 0, 0, 34}; // Load src port
-    program->bf_insns[6] = (struct bpf_insn){BPF_JMP | BPF_JEQ | BPF_K, 5, 0, port}; // Jump to accept if match
-
-    // Check destination port
-    program->bf_insns[7] = (struct bpf_insn){BPF_LD | BPF_H | BPF_ABS, 0, 0, 36}; // Load dst port
-    program->bf_insns[8] = (struct bpf_insn){BPF_JMP | BPF_JEQ | BPF_K, 3, 0, port}; // Jump to accept if match
-
-    // Reject paths
-    program->bf_insns[9] = (struct bpf_insn){BPF_RET | BPF_K, 0, 0, 0}; // Reject (no port match)
-    program->bf_insns[10] = (struct bpf_insn){BPF_RET | BPF_K, 0, 0, 0}; // Reject (not TCP/UDP)
-    program->bf_insns[11] = (struct bpf_insn){BPF_RET | BPF_K, 0, 0, 0}; // Reject (not IP)
-
-    // Accept path
-    program->bf_insns[12] = (struct bpf_insn){BPF_RET | BPF_K, 0, 0, 0xffffffff}; // Accept
-
+    memcpy(program->bf_insns, instns, sizeof(instns));
     return 0;
 }
 
@@ -363,34 +366,49 @@ int bpf_create_protocol_filter(const char *protocol, bpf_program_t *program) {
         proto_num = (uint8_t)val;
     }
 
-    // Allocate instructions for protocol filter
-    program->bf_len = 6;
+    const struct bpf_insn instns[] = {
+        // Load IP protocol from Ethernet frame
+        BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 12),                   // Load EtherType
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, ETHERTYPE_IP, 0, 3),  // Jump if not IP
+
+        // Check protocol
+        BPF_STMT(BPF_LD | BPF_B | BPF_ABS, IP_PROTO_OFFSET),      // Load protocol
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, proto_num, 1, 0),     // Jump if match
+
+        BPF_STMT(BPF_RET | BPF_K, 0),                             // Reject
+        BPF_STMT(BPF_RET | BPF_K, 0xffff),                        // Accept
+    };
+
+    // Allocate instructions
+    program->bf_len = sizeof(instns) / sizeof(instns[0]);
     program->bf_insns = calloc(program->bf_len, sizeof(struct bpf_insn));
     if (!program->bf_insns) {
         return -1;
     }
 
-    // Load IP protocol from Ethernet frame
-    program->bf_insns[0] = (struct bpf_insn){BPF_LD | BPF_H | BPF_ABS, 0, 0, 12}; // Load EtherType
-    program->bf_insns[1] = (struct bpf_insn){BPF_JMP | BPF_JEQ | BPF_K, 0, 3, ETHERTYPE_IP}; // Jump if not IP
+    memcpy(program->bf_insns, instns, sizeof(instns));
+    return 0;
+}
 
-    // Check protocol
-    program->bf_insns[2] = (struct bpf_insn){BPF_LD | BPF_B | BPF_ABS, 0, 0, IP_PROTO_OFFSET}; // Load protocol
-    program->bf_insns[3] = (struct bpf_insn){BPF_JMP | BPF_JEQ | BPF_K, 1, 0, proto_num}; // Jump if match
-
-    program->bf_insns[4] = (struct bpf_insn){BPF_RET | BPF_K, 0, 0, 0}; // Reject
-    program->bf_insns[5] = (struct bpf_insn){BPF_RET | BPF_K, 0, 0, 0xffffffff}; // Accept
-
+int bpf_create_empty_filter(bpf_program_t *program) {
+    const struct bpf_insn instns[] = {
+        BPF_STMT(BPF_RET | BPF_K, 0xffff), // Accept all packets
+    };
+    program->bf_len = sizeof(instns) / sizeof(instns[0]);
+    program->bf_insns = calloc(program->bf_len, sizeof(struct bpf_insn));
+    if (!program->bf_insns) {
+        return -1;
+    }
+    memcpy(program->bf_insns, instns, sizeof(instns));
     return 0;
 }
 
 // Free a BPF program
 void bpf_free_program(bpf_program_t *program) {
-    if (program && program->bf_insns) {
-        free(program->bf_insns);
-        program->bf_insns = NULL;
-        program->bf_len = 0;
+    if (!program) {
+        return;
     }
+    free(program->bf_insns);
 }
 
 // Simple tokenizer for filter expressions
@@ -425,15 +443,12 @@ static void free_tokens(token_list_t *tokens) {
 
 // Simple filter expression parser (supports basic syntax like "host 192.168.1.1", "port 80", "tcp")
 int bpf_compile_filter(const char *filter_string, bpf_program_t *program) {
+    if (!program) {
+        return -1;
+    }
+    
     if (!filter_string || strlen(filter_string) == 0) {
-        // Empty filter accepts all packets
-        program->bf_len = 1;
-        program->bf_insns = calloc(1, sizeof(struct bpf_insn));
-        if (!program->bf_insns) {
-            return -1;
-        }
-        program->bf_insns[0] = (struct bpf_insn){BPF_RET | BPF_K, 0, 0, 0xffffffff};
-        return 0;
+        return bpf_create_empty_filter(program);
     }
 
     token_list_t tokens;

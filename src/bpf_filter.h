@@ -28,13 +28,18 @@ typedef struct bpf_program {
     struct bpf_insn *bf_insns;     // Pointer to array of instructions
 } bpf_program_t;
 
-// BPF memory size
-#define BPF_MEMWORDS      16
-
 // BPF opcodes (simplified subset for packet filtering)
 #define BPF_CLASS(code) ((code) & 0x07)
 #define BPF_SIZE(code)  ((code) & 0x18)
 #define BPF_MODE(code)  ((code) & 0xe0)
+
+// Macros for filter block array initializers
+#ifndef BPF_STMT
+#define BPF_STMT(code, k) { (unsigned short)(code), 0, 0, k }
+#endif
+#ifndef BPF_JUMP
+#define BPF_JUMP(code, k, jt, jf) { (unsigned short)(code), jt, jf, k }
+#endif
 
 // Instruction classes
 #define BPF_LD    0x00  // Load
