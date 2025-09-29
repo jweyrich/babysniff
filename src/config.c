@@ -81,8 +81,15 @@ static void config_auto_enable_protocol_filters(config_t *config, const cli_args
 
     // Simple string matching to auto-enable protocol display filters
     // This makes BPF usage more intuitive for users
+	if (strstr(args->bpf_filter_expr, "arp") != NULL) {
+		config->display_filters_flag.arp = true;
+	}
+	if (strstr(args->bpf_filter_expr, "ip") != NULL) {
+		config->display_filters_flag.ip = true;
+	}
     if (strstr(args->bpf_filter_expr, "tcp") != NULL) {
         config->display_filters_flag.tcp = true;
+		config->display_filters_flag.dns = true; // TCP may carry DNS
     }
     if (strstr(args->bpf_filter_expr, "udp") != NULL) {
         config->display_filters_flag.udp = true;
@@ -91,10 +98,11 @@ static void config_auto_enable_protocol_filters(config_t *config, const cli_args
     if (strstr(args->bpf_filter_expr, "icmp") != NULL) {
         config->display_filters_flag.icmp = true;
     }
-    if (strstr(args->bpf_filter_expr, "port 53") != NULL) {
-        config->display_filters_flag.udp = true;
-        config->display_filters_flag.dns = true;
-    }
+	if (strstr(args->bpf_filter_expr, "dns") != NULL || strstr(args->bpf_filter_expr, "port 53") != NULL) {
+		config->display_filters_flag.udp = true;
+		config->display_filters_flag.tcp = true;
+		config->display_filters_flag.dns = true;
+	}
     if (strstr(args->bpf_filter_expr, "port 80") != NULL || strstr(args->bpf_filter_expr, "port 443") != NULL) {
         config->display_filters_flag.tcp = true;
     }

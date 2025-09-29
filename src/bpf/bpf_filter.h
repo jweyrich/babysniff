@@ -130,6 +130,9 @@ int bpf_create_port_filter(uint16_t port, bpf_program_t *program);
 int bpf_create_protocol_filter(const char *protocol, bpf_program_t *program);
 int bpf_create_net_filter(const char *network, bpf_program_t *program);
 
+// Helper function to allocate and copy BPF instructions
+int bpf_set_instructions(bpf_program_t *program, const struct bpf_insn *instns, size_t total_size);
+
 // High-level filter parsing (tcpdump-like syntax)
 typedef enum {
     FILTER_TYPE_HOST,

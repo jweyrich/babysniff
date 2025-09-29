@@ -273,6 +273,22 @@ static int resolve_hostname(const char *hostname, struct in_addr *addr) {
     return -1;
 }
 
+// Helper function to allocate and copy BPF instructions
+int bpf_set_instructions(bpf_program_t *program, const struct bpf_insn *instns, size_t total_size) {
+    if (program->bf_insns) {
+        // If there are existing instructions, free them first.
+        bpf_free_program(program);
+    }
+    const size_t count = total_size / sizeof(struct bpf_insn);
+    program->bf_len = count;
+    program->bf_insns = calloc(program->bf_len, sizeof(struct bpf_insn));
+    if (!program->bf_insns) {
+        return -1;
+    }
+    memcpy(program->bf_insns, instns, total_size);
+    return 0;
+}
+
 // Create a simple host filter (matches src or dst IP)
 int bpf_create_host_filter(const char *host, bpf_program_t *program) {
     struct in_addr addr;
@@ -294,15 +310,7 @@ int bpf_create_host_filter(const char *host, bpf_program_t *program) {
         BPF_STMT(BPF_RET | BPF_K, 0xffff),                         // Accept
     };
 
-    // Allocate instructions
-    program->bf_len = sizeof(instns) / sizeof(instns[0]);
-    program->bf_insns = calloc(program->bf_len, sizeof(struct bpf_insn));
-    if (!program->bf_insns) {
-        return -1;
-    }
-    
-    memcpy(program->bf_insns, instns, sizeof(instns));
-    return 0;
+    return bpf_set_instructions(program, instns, sizeof(instns));
 }
 
 // Create a port filter (matches src or dst port for SCTP/TCP/UDP)
@@ -336,22 +344,46 @@ int bpf_create_port_filter(uint16_t port, bpf_program_t *program) {
         BPF_STMT(BPF_RET | BPF_K, 0),                              // 0x06: return 0 (reject packet)
     };
 
-    // Allocate instructions
-    program->bf_len = sizeof(instns) / sizeof(instns[0]);
-    program->bf_insns = calloc(program->bf_len, sizeof(struct bpf_insn));
-    if (!program->bf_insns) {
-        return -1;
-    }
-
-    memcpy(program->bf_insns, instns, sizeof(instns));
-    return 0;
+    return bpf_set_instructions(program, instns, sizeof(instns));
 }
 
-// Create a protocol filter (TCP, UDP, ICMP, or numeric)
+// Create a protocol filter (ARP, IP, TCP, UDP, ICMP, DNS, or numeric)
 int bpf_create_protocol_filter(const char *protocol, bpf_program_t *program) {
-    uint8_t proto_num;
+    // Check if this is an EtherType protocol (operates at layer 2)
+    if (strcasecmp(protocol, "arp") == 0) {
+        const struct bpf_insn instns[] = {
+            BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 12),                    // Load EtherType
+            BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, ETHERTYPE_ARP, 0, 1),  // Jump if not ARP
+            BPF_STMT(BPF_RET | BPF_K, 0xffff),                         // Accept
+            BPF_STMT(BPF_RET | BPF_K, 0),                              // Reject
+        };
+        return bpf_set_instructions(program, instns, sizeof(instns));
+    } else if (strcasecmp(protocol, "ip") == 0) {
+        const struct bpf_insn instns[] = {
+            BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 12),                   // Load EtherType
+            BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, ETHERTYPE_IP, 0, 1),  // Jump if not IP
+            BPF_STMT(BPF_RET | BPF_K, 0xffff),                        // Accept
+            BPF_STMT(BPF_RET | BPF_K, 0),                             // Reject
+        };
+        return bpf_set_instructions(program, instns, sizeof(instns));
+    } else if (strcasecmp(protocol, "ipv6") == 0) {
+        const struct bpf_insn instns[] = {
+            BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 12),                     // Load EtherType
+            BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, ETHERTYPE_IPV6, 0, 1),  // Jump if not IPv6
+            BPF_STMT(BPF_RET | BPF_K, 0xffff),                          // Accept
+            BPF_STMT(BPF_RET | BPF_K, 0),                               // Reject
+        };
+        return bpf_set_instructions(program, instns, sizeof(instns));
+    } else if (strcasecmp(protocol, "dns") == 0) {
+		// Assume port 53
+        return bpf_create_port_filter(53, program);
+    }
 
-    if (strcasecmp(protocol, "tcp") == 0) {
+    // Handle IP protocol types (operates at layer 3/4)
+    uint8_t proto_num;
+    if (strcasecmp(protocol, "sctp") == 0) {
+        proto_num = IPPROTO_SCTP;
+    } else if (strcasecmp(protocol, "tcp") == 0) {
         proto_num = IPPROTO_TCP;
     } else if (strcasecmp(protocol, "udp") == 0) {
         proto_num = IPPROTO_UDP;
@@ -367,41 +399,24 @@ int bpf_create_protocol_filter(const char *protocol, bpf_program_t *program) {
         proto_num = (uint8_t)val;
     }
 
+    // Create filter for IP protocol types (requires checking both EtherType and IP protocol field)
     const struct bpf_insn instns[] = {
-        // Load IP protocol from Ethernet frame
         BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 12),                   // Load EtherType
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, ETHERTYPE_IP, 0, 3),  // Jump if not IP
-
-        // Check protocol
-        BPF_STMT(BPF_LD | BPF_B | BPF_ABS, IP_PROTO_OFFSET),      // Load protocol
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, proto_num, 1, 0),     // Jump if match
-
-        BPF_STMT(BPF_RET | BPF_K, 0),                             // Reject
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, ETHERTYPE_IP, 0, 3),  // Jump if not IPv4
+        BPF_STMT(BPF_LD | BPF_B | BPF_ABS, IP_PROTO_OFFSET),      // Load IP protocol field
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, proto_num, 0, 1),     // Jump if protocol doesn't match
         BPF_STMT(BPF_RET | BPF_K, 0xffff),                        // Accept
+        BPF_STMT(BPF_RET | BPF_K, 0),                             // Reject
     };
 
-    // Allocate instructions
-    program->bf_len = sizeof(instns) / sizeof(instns[0]);
-    program->bf_insns = calloc(program->bf_len, sizeof(struct bpf_insn));
-    if (!program->bf_insns) {
-        return -1;
-    }
-
-    memcpy(program->bf_insns, instns, sizeof(instns));
-    return 0;
+    return bpf_set_instructions(program, instns, sizeof(instns));
 }
 
 int bpf_create_empty_filter(bpf_program_t *program) {
     const struct bpf_insn instns[] = {
         BPF_STMT(BPF_RET | BPF_K, 0xffff), // Accept all packets
     };
-    program->bf_len = sizeof(instns) / sizeof(instns[0]);
-    program->bf_insns = calloc(program->bf_len, sizeof(struct bpf_insn));
-    if (!program->bf_insns) {
-        return -1;
-    }
-    memcpy(program->bf_insns, instns, sizeof(instns));
-    return 0;
+    return bpf_set_instructions(program, instns, sizeof(instns));
 }
 
 // Free a BPF program

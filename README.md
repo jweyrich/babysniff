@@ -29,7 +29,7 @@ It supports _native_ and _emulated_ BPF filtering capabilities **without dependi
 
 ### Supported filter types
 
-- **Protocol filters**: `tcp`, `udp`, `icmp`
+- **Protocol filters**: `arp`, `ip`, `ipv6`, `tcp`, `udp`, `icmp`, `dns`
 - **Host filters**: `host 192.168.1.1` (matches source or destination)
 - **Port filters**: `port 80` (matches source or destination TCP/UDP ports)
 
@@ -49,14 +49,17 @@ The superuser privilege is necessary because Linux and BSD systems require eleva
 # Filter TCP traffic only
 sudo ./babysniff -i eth0 "tcp"
 
+# Filter UDP traffic only
+sudo ./babysniff -i eth0 "udp"
+
 # Filter traffic to/from a specific host
 sudo ./babysniff -i eth0 "host 192.168.1.1"
 
 # Filter traffic on port 80
 sudo ./babysniff -i eth0 "port 80"
 
-# Filter UDP traffic (automatically enables UDP/DNS display)
-sudo ./babysniff -i eth0 "udp"
+# Filter DNS traffic
+sudo ./babysniff -i eth0 "dns"
 
 # Combine with protocol display filters for control
 sudo ./babysniff -i eth0 -d tcp,ip,eth "tcp"
