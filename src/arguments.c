@@ -10,11 +10,12 @@ void usage(const cli_args_t *args) {
 	// TODO(jweyrich): Use ANSI escape sequences only when stdout is guaranteed to be a TTY.
 #define BOLD(text) "\033[1m" text "\033[0m"
 #define UNDER(text) "\033[4m" text "\033[0m"
-	const char *usage_format = "Usage: %s [OPTIONS] " UNDER("expression") "\n"
+	const char *usage_format = "Usage: %s [OPTIONS] [" UNDER("expression") "]\n"
 		"\n"
 		"Arguments:\n"
-		"  " UNDER("expression") "                   BPF filter expression (tcpdump-style).\n"
+		"  " UNDER("expression") "                   BPF filter expression (tcpdump-style). Optional.\n"
 		"                              Examples: 'host 192.168.1.1', 'port 80', 'tcp'\n"
+		"                              If not provided, captures all packets ('ip').\n"
 		"\n"
 		"Options:\n"
 		"  -l #, --loglevel=#          Set the daemon's log level.\n"
@@ -110,21 +111,20 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 		}
 	}
 	
-	// Check for required positional argument (BPF expression)
-	if (optind >= argc) {
-		fprintf(stderr, "Error: BPF filter expression is required.\n\n");
-		usage(args);
-		return -1;
-	}
-	
-	// The first non-option argument is the BPF filter expression
-	args->bpf_filter_expr = argv[optind];
-	
-	// Check for extra arguments
-	if (optind + 1 < argc) {
-		fprintf(stderr, "Error: Too many arguments. Only one BPF filter expression is allowed.\n\n");
-		usage(args);
-		return -1;
+	// Check for optional positional argument (BPF expression)
+	if (optind < argc) {
+		// The first non-option argument is the BPF filter expression
+		args->bpf_filter_expr = argv[optind];
+		
+		// Check for extra arguments
+		if (optind + 1 < argc) {
+			fprintf(stderr, "Error: Too many arguments. Only one BPF filter expression is allowed.\n\n");
+			usage(args);
+			return -1;
+		}
+	} else {
+		// No BPF expression provided, use default "ip" filter to capture all IP traffic
+		args->bpf_filter_expr = "ip";
 	}
 	
 	return 0;

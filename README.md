@@ -9,7 +9,7 @@ It's a toy tool that I created to learn more about network protocols. It's rudim
 | Layer 2  | Layer 3  | Layer 4  | Layer 7  |
 |----------|----------|----------|----------|
 | ETH      | ICMP     | TCP      | DNS      |
-| ARP      | IP       | UDP      | Cell     |
+| ARP      | IP       | UDP      |          |
 
 **Notes**:
 1. Support for EDNS0/DNSSEC is WIP
@@ -46,6 +46,9 @@ The superuser privilege is necessary because Linux and BSD systems require eleva
 ### Usage examples
 
 ```shell
+# Capture all IP traffic (default when no filter specified)
+sudo ./babysniff -i eth0
+
 # Filter TCP traffic only
 sudo ./babysniff -i eth0 "tcp"
 
@@ -68,11 +71,13 @@ sudo ./babysniff -i eth0 -d tcp,ip,eth "tcp"
 ### Command line usage
 
 ```
-babysniff [OPTIONS] <expression>
+babysniff [OPTIONS] [expression]
 ```
 
 **Arguments:**
-- `<expression>`: BPF filter expression (tcpdump-style) - **required**
+- `[expression]`: BPF filter expression (tcpdump-style) - **optional**
+  - If not provided, defaults to `"ip"` (captures all IP traffic)
+  - Examples: `"tcp"`, `"host 192.168.1.1"`, `"port 80"`
 
 **Options:**
 - `-b, --background`: Run in background (daemonize)
