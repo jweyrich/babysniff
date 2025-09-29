@@ -75,9 +75,9 @@ static int config_parse_display_filters_flag(config_t *config, const cli_args_t 
  * @param args    The command line arguments
  */
 static void config_auto_enable_protocol_filters(config_t *config, const cli_args_t *args) {
-    if (args->bpf_filter_expr == NULL) {
-        return; // No BPF filter, nothing to do
-    }
+	if (args->bpf_filter_expr == NULL) {
+		return; // No BPF filter, nothing to do
+	}
 
     // Simple string matching to auto-enable protocol display filters
     // This makes BPF usage more intuitive for users
@@ -89,11 +89,9 @@ static void config_auto_enable_protocol_filters(config_t *config, const cli_args
 	}
     if (strstr(args->bpf_filter_expr, "tcp") != NULL) {
         config->display_filters_flag.tcp = true;
-		config->display_filters_flag.dns = true; // TCP may carry DNS
     }
     if (strstr(args->bpf_filter_expr, "udp") != NULL) {
         config->display_filters_flag.udp = true;
-        config->display_filters_flag.dns = true; // UDP often carries DNS
     }
     if (strstr(args->bpf_filter_expr, "icmp") != NULL) {
         config->display_filters_flag.icmp = true;
@@ -107,9 +105,9 @@ static void config_auto_enable_protocol_filters(config_t *config, const cli_args
         config->display_filters_flag.tcp = true;
     }
 
-    // Always enable IP and Ethernet for context
-    config->display_filters_flag.ip = true;
-    config->display_filters_flag.eth = true;
+	// Always enable IP and Ethernet for context
+	config->display_filters_flag.ip = true;
+	config->display_filters_flag.eth = true;
 }
 
 /**
