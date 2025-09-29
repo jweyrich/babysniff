@@ -1,8 +1,11 @@
 # babysniff
 
-A simple network sniffer for Linux and macOS written from scratch without any libraries.
+A zero-dependency network sniffer, written from scratch, that supports emulated and native cBPF. Runs on Linux, BSD and macOS. Currently supports ETH, ARP, IP, ICMP, TCP, UDP, DNS.
 
-It's a toy tool that I created to learn more about network protocols. It's rudimentary when compared to tcpdump or wireshark.
+It's a toy tool that I created to learn more about network protocols. It's still rudimentary when compared to tcpdump or wireshark.
+
+> [!WARNING]
+> This repo is a work in progress!
 
 ## Supported protocols
 
