@@ -8,12 +8,15 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-// Additional BPF macros
-#define BPF_OP(code)      ((code) & 0xf0) // Operation
-#define BPF_SRC(code)     ((code) & 0x08) // Source of operand
-#define BPF_MISCOP(code)  ((code) & 0xf8) // Miscellaneous operations
-#define BPF_TAX           0x00            // Transfer A to X
-#define BPF_TXA           0x80            // Transfer X to A
+//
+// Reference man-page:
+// name: "bpf -- Berkeley Packet Filter"
+// url : https://man.freebsd.org/cgi/man.cgi?query=bpf&sektion=4&manpath=FreeBSD+4.5-RELEASE
+//
+// Reference paper:
+// name: "The BSD Packet Filter: A New Architecture for User-level Packet Capture"
+// url : http://www.tcpdump.org/papers/bpf-usenix93.pdf
+//
 
 // BPF virtual machine stack size
 #define BPF_VM_STACK_SIZE   16
