@@ -121,7 +121,6 @@ typedef struct bpf_program bpf_program_t;
 
 // Filter compilation and execution functions
 int bpf_compile_filter(const char *filter_string, bpf_program_t *program);
-int bpf_execute_filter(const bpf_program_t *program, const uint8_t *packet, uint32_t packet_len);
 void bpf_free_program(bpf_program_t *program);
 
 // Utility functions for creating common filters

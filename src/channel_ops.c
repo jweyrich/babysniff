@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include "bpf/bpf_filter.h"
+#include "bpf/bpf_vm.h"
 #include "bpf/bpf_types.h"
 
 int sniff_setnonblock(channel_t *channel, int nonblock) {
