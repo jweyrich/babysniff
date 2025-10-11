@@ -95,54 +95,54 @@ buffer_t *buffer_free(buffer_t *buffer) {
     return NULL;
 }
 
-inline int buffer_error(const buffer_t *buffer) {
+int buffer_error(const buffer_t *buffer) {
     return buffer->error.code;
 }
 
-inline int buffer_error_memreq(const buffer_t *buffer) {
+int buffer_error_memreq(const buffer_t *buffer) {
     return buffer->error.info.memreq;
 }
 
-inline int buffer_has_error(const buffer_t *buffer) {
+int buffer_has_error(const buffer_t *buffer) {
     return buffer->error.code == BUFFER_NOERROR ? 0 : 1;
 }
 
-inline void buffer_clear_error(buffer_t *buffer) {
+void buffer_clear_error(buffer_t *buffer) {
     buffer->error.code = BUFFER_NOERROR;
 }
 
-inline void buffer_set_data(buffer_t *buffer, uint8_t *data, uint32_t size) {
+void buffer_set_data(buffer_t *buffer, uint8_t *data, uint32_t size) {
     buffer->data = data;
     buffer->size = size;
     buffer->used = size;
     buffer->current = 0;
 }
 
-inline uint8_t *buffer_data(const buffer_t *buffer) {
+uint8_t *buffer_data(const buffer_t *buffer) {
     return buffer->data;
 }
 
-inline uint8_t *buffer_data_ptr(const buffer_t *buffer) {
+uint8_t *buffer_data_ptr(const buffer_t *buffer) {
     return buffer->data + buffer->current;
 }
 
-inline uint32_t buffer_size(const buffer_t *buffer) {
+uint32_t buffer_size(const buffer_t *buffer) {
     return buffer->size;
 }
 
-inline uint32_t buffer_used(const buffer_t *buffer) {
+uint32_t buffer_used(const buffer_t *buffer) {
     return buffer->used;
 }
 
-inline void buffer_clear(buffer_t *buffer) {
+void buffer_clear(buffer_t *buffer) {
     buffer->used = 0;
 }
 
-inline uint32_t buffer_left(const buffer_t *buffer) {
+uint32_t buffer_left(const buffer_t *buffer) {
     return buffer->size - buffer->used;
 }
 
-inline uint32_t buffer_tell(const buffer_t *buffer) {
+uint32_t buffer_tell(const buffer_t *buffer) {
     return buffer->current;
 }
 
@@ -199,7 +199,7 @@ uint8_t buffer_read_byte(buffer_t *buffer) {
     return output;
 }
 
-inline int8_t buffer_read_int8(buffer_t *buffer) {
+int8_t buffer_read_int8(buffer_t *buffer) {
     return buffer_read_byte(buffer);
 }
 
@@ -241,19 +241,19 @@ int64_t buffer_read_int64(buffer_t *buffer) {
     return output;
 }
 
-inline uint8_t buffer_read_uint8(buffer_t *buffer) {
+uint8_t buffer_read_uint8(buffer_t *buffer) {
     return buffer_read_int8(buffer);
 }
 
-inline uint16_t buffer_read_uint16(buffer_t *buffer) {
+uint16_t buffer_read_uint16(buffer_t *buffer) {
     return buffer_read_int16(buffer);
 }
 
-inline uint32_t buffer_read_uint32(buffer_t *buffer) {
+uint32_t buffer_read_uint32(buffer_t *buffer) {
     return buffer_read_int32(buffer);
 }
 
-inline uint64_t buffer_read_uint64(buffer_t *buffer) {
+uint64_t buffer_read_uint64(buffer_t *buffer) {
     return buffer_read_int64(buffer);
 }
 
@@ -322,19 +322,19 @@ void buffer_write_int64(buffer_t *buffer, int64_t input) {
     buffer_write_int32(buffer, input & 0xffffffff);
 }
 
-inline void buffer_write_uint8(buffer_t *buffer, uint8_t input) {
+void buffer_write_uint8(buffer_t *buffer, uint8_t input) {
     buffer_write_int8(buffer, input);
 }
 
-inline void buffer_write_uint16(buffer_t *buffer, uint16_t input) {
+void buffer_write_uint16(buffer_t *buffer, uint16_t input) {
     buffer_write_int16(buffer, input);
 }
 
-inline void buffer_write_uint32(buffer_t *buffer, uint32_t input) {
+void buffer_write_uint32(buffer_t *buffer, uint32_t input) {
     buffer_write_int32(buffer, input);
 }
 
-inline void buffer_write_uint64(buffer_t *buffer, uint64_t input) {
+void buffer_write_uint64(buffer_t *buffer, uint64_t input) {
     buffer_write_int64(buffer, input);
 }
 
