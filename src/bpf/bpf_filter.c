@@ -16,17 +16,24 @@
 
 // Helper function to resolve hostname to IP address
 static int resolve_hostname(const char *hostname, struct in_addr *addr) {
-    struct hostent *host_entry;
+    const int family = AF_INET; // IPv4 only because we don't yet support IPv6
 
-    // Try to parse as IP address first
-    if (inet_aton(hostname, addr)) {
+    struct hostent *host_entry;
+    // Try to parse as IPv4 address first using inet_pton (cross-platform)
+    if (inet_pton(family, hostname, addr) == 1) {
         return 0;
     }
 
-    // Try to resolve as hostname
-    host_entry = gethostbyname(hostname);
-    if (host_entry && host_entry->h_addr_list[0]) {
-        memcpy(addr, host_entry->h_addr_list[0], sizeof(struct in_addr));
+    // Try to resolve hostname using getaddrinfo
+    struct addrinfo hints, *result;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = family;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if (getaddrinfo(hostname, NULL, &hints, &result) == 0) {
+        struct sockaddr_in *sockaddr_ipv4 = (struct sockaddr_in *)result->ai_addr;
+        *addr = sockaddr_ipv4->sin_addr;
+        freeaddrinfo(result);
         return 0;
     }
 
