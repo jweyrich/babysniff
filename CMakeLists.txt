@@ -8,7 +8,6 @@ project(babysniff
 
 file(GLOB babysniff_srcs RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "src/*.c"
-    "src/compat/*.c"
     "src/bpf/*.c"
     "src/platform/shared/*.c"
     "src/proto/*.c"
@@ -17,6 +16,14 @@ file(GLOB babysniff_srcs RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "src/proto/dns/sections/rdata/*.c"
     "src/types/*.c"
 )
+
+# Conditionally include compatibility sources for Windows
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    list(APPEND babysniff_srcs 
+        "src/compat/getopt_compat.c"
+        "src/compat/string_compat.c"
+    )
+endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     file(GLOB babysniff_srcs_platform RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/platform/linux/*.c")

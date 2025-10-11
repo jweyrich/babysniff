@@ -1,10 +1,11 @@
 #include "arguments.h"
 #include "log_level.h"
 #include "version.h"
-#include <getopt.h>
+#include "system.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "compat/getopt_compat.h"
 
 void usage(const cli_args_t *args) {
 	// TODO(jweyrich): Use ANSI escape sequences only when stdout is guaranteed to be a TTY.
@@ -56,11 +57,11 @@ const char *get_opt_string(const struct option *options) {
 	for (i=0; options[i].name != NULL; ++i) {
 		switch (options[i].has_arg) {
 			case no_argument:
-				*ptr++ = options[i].val;
+				*ptr++ = (char)options[i].val;
 				break;
 			case required_argument:
 			case optional_argument:
-				*ptr++ = options[i].val;
+				*ptr++ = (char)options[i].val;
 				*ptr++ = ':';
 				break;
 		}
@@ -85,7 +86,16 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 	memset(args, 0, sizeof(struct cli_args));
 	args->argc = argc;
 	args->argv = argv;
+#ifdef OS_WINDOWS
+	// On Windows, path separator is backslash
+	args->exename = strrchr(argv[0], '\\');
+	if (args->exename == NULL) {
+		// If not found, fallback to forward slash
+		args->exename = strrchr(argv[0], '/');
+	}
+#else
 	args->exename = strrchr(argv[0], '/');
+#endif
 	args->exename = (args->exename != NULL) ? args->exename+1 : argv[0];
 	args->bpf_mode = NATIVE_BPF; // Default to native BPF
 
@@ -110,12 +120,12 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 			case '?': usage(args); exit(EXIT_FAILURE);
 		}
 	}
-	
+
 	// Check for optional positional argument (BPF expression)
 	if (optind < argc) {
 		// The first non-option argument is the BPF filter expression
 		args->bpf_filter_expr = argv[optind];
-		
+
 		// Check for extra arguments
 		if (optind + 1 < argc) {
 			fprintf(stderr, "Error: Too many arguments. Only one BPF filter expression is allowed.\n\n");
@@ -126,6 +136,6 @@ int parse_arguments(cli_args_t *args, int argc, char **argv) {
 		// No BPF expression provided, use default "ip" filter to capture all IP traffic
 		args->bpf_filter_expr = "ip";
 	}
-	
+
 	return 0;
 }
