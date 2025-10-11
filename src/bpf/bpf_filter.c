@@ -60,14 +60,14 @@ int bpf_create_host_filter(const char *host, bpf_program_t *program) {
     uint32_t host_ip = ntohl(addr.s_addr);
 
     const struct bpf_insn instns[] = {
-        BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 12),                    // Load EtherType
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, ETHERTYPE_IP, 0, 6),   // If not IP, jump to reject
-        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, IP_SRC_OFFSET),         // Load src IP
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, 3, 0, host_ip),        // If src IP matches, jump to accept
-        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, IP_DST_OFFSET),         // Load dst IP
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, 1, 0, host_ip),        // If dst IP matches, jump to accept
-        BPF_STMT(BPF_RET | BPF_K, 0),                              // Reject
-        BPF_STMT(BPF_RET | BPF_K, 0xffff),                         // Accept
+        BPF_STMT(BPF_LD | BPF_H | BPF_ABS, 12),                    // 0: Load EtherType
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, ETHERTYPE_IP, 0, 5),   // 1: If not IP, jump 5 to reject (7)
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, IP_SRC_OFFSET),         // 2: Load src IP
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, host_ip, 2, 0),        // 3: If src IP matches, jump 2 to accept (6)
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, IP_DST_OFFSET),         // 4: Load dst IP
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, host_ip, 0, 1),        // 5: If dst IP matches, accept (next), else jump 1 to reject (7)
+        BPF_STMT(BPF_RET | BPF_K, 0xffff),                         // 6: Accept
+        BPF_STMT(BPF_RET | BPF_K, 0),                              // 7: Reject
     };
 
     return bpf_set_instructions(program, instns, sizeof(instns));
