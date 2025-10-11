@@ -84,8 +84,6 @@
 #	define OS_CYGWIN
 #elif defined(__VMS)
 #	define OS_OPENVMS
-#elif defined(__osf__)
-#	define OS_OSF
 #elif defined(__QNXNTO__)
 #	define OS_QNXNTO
 #elif defined(_arch_dreamcast)
@@ -94,7 +92,10 @@
 #   define OS_TRU64
 #elif defined(WINDOWS) || \
     defined(WIN32) || \
-    defined(_WIN32)
+    defined(_WIN32) || \
+    defined(_WIN64) || \
+    defined(__WIN32__) || \
+    defined(__WINDOWS__)
 #	define OS_WINDOWS
 #elif defined(UNIXWARE)
 #   define OS_UNIXWARE
