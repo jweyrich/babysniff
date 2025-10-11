@@ -1,33 +1,42 @@
 #pragma once
 
 /*
- * Systems:
- * 		OS_MAC
- * 		OS_LINUX
- * 		OS_FREEBSD
- * 		OS_NETBSD
- * 		OS_OPENBSD
- * 		OS_MINT
- * 		OS_SOLARIS
- * 		OS_HPUX
- * 		OS_RISC_OS
- * 		OS_OS2
- * 		OS_IRIX
- * 		OS_AIX
- * 		OS_BEOS
- * 		OS_LYNX_OS
- * 		OS_CYGWIN
- * 		OS_OPENVMS
- * 		OS_OSF
- * 		OS_QNXNTO
- *      OS_TRU64
- * 		OS_WINDOWS
- *      OS_UNIXWARE
- * 		OS_DREAMCAST
- * Special cases:
- * 		OS_BSD_BASED
- * 		OS_MOSTLY_POSIX_COMPLIANT
- * 		OS_FULLY_POSIX_COMPLIANT
+ * Cross-platform OS detection macros
+ *
+ * Primary OS identifiers:
+ *   OS_MAC          - macOS/Mac OS X/Classic Mac
+ *   OS_LINUX        - Linux distributions
+ *   OS_WINDOWS      - Windows (all versions)
+ *   OS_CYGWIN       - Cygwin on Windows
+ *
+ * BSD variants:
+ *   OS_FREEBSD      - FreeBSD (includes DragonFly BSD)
+ *   OS_NETBSD       - NetBSD
+ *   OS_OPENBSD      - OpenBSD
+ *
+ * Unix systems:
+ *   OS_SOLARIS      - Solaris/SunOS
+ *   OS_HPUX         - HP-UX
+ *   OS_AIX          - IBM AIX
+ *   OS_IRIX         - SGI IRIX
+ *   OS_OSF          - OSF/1, Digital Unix
+ *   OS_TRU64        - Tru64 Unix
+ *   OS_UNIXWARE     - UnixWare
+ *   OS_QNXNTO       - QNX Neutrino
+ *   OS_LYNX_OS      - LynxOS
+ *
+ * Other systems:
+ *   OS_BEOS         - BeOS/Haiku
+ *   OS_OS2          - OS/2
+ *   OS_OPENVMS      - OpenVMS
+ *   OS_RISC_OS      - RISC OS
+ *   OS_MINT         - Atari MiNT
+ *   OS_DREAMCAST    - Dreamcast
+ *
+ * Composite macros:
+ *   OS_BSD_BASED              - Any BSD-derived system
+ *   OS_MOSTLY_POSIX_COMPLIANT - Systems with good POSIX support
+ *   OS_FULLY_POSIX_COMPLIANT  - Systems with complete POSIX compliance
  */
 
 #if defined(__APPLE__) || \
