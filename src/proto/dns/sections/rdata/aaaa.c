@@ -2,6 +2,7 @@
 #include "log.h"
 #include "types/buffer.h"
 #include "proto/dns/sections/rdata.h"
+#include "macros.h"
 #include "utils.h" // for utils_in6_addr_to_str
 #include <arpa/inet.h> // for INET6_ADDRSTRLEN
 
@@ -17,6 +18,7 @@ int parse_rdata_aaaa(dns_rdata_t *rdata, buffer_t *buffer) {
 }
 
 void free_rdata_aaaa(dns_rdata_t *rdata) {
+	UNUSED(rdata);
     // Nothing to do
 }
 

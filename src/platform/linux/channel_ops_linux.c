@@ -5,7 +5,9 @@
 #include "channel_ops.h"
 #include "config.h"
 #include "log.h"
+#include "macros.h"
 #include "proto_ops.h"
+
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -33,6 +35,7 @@
 #include <unistd.h>
 
 static int linux_ensure_version(channel_t *channel) {
+	UNUSED(channel);
 	return 0;
 }
 
@@ -67,6 +70,8 @@ static int linux_set_interface(channel_t *channel, const char *ifname, uint16_t 
 }
 
 static int linux_set_immediate(channel_t *channel, int on) {
+	UNUSED(channel);
+	UNUSED(on);
 	return 0;
 }
 
