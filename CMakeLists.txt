@@ -22,6 +22,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     list(APPEND babysniff_srcs 
         "src/compat/getopt_compat.c"
         "src/compat/string_compat.c"
+        "src/compat/time_compat.c"
     )
 endif()
 
