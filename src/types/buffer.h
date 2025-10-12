@@ -8,13 +8,13 @@
 //
 typedef struct buffer {
     uint8_t *data;
-    uint32_t size;
-    uint32_t used;
-    uint32_t current;
+    size_t size;
+    size_t used;
+    size_t current;
     struct {
         int code;
         union info {
-            uint32_t memreq;
+            size_t memreq;
         } info;
     } error;
 } buffer_t;
@@ -43,15 +43,15 @@ typedef enum {
 //
 // Allocation
 //
-buffer_t *buffer_alloc(uint32_t length);
+buffer_t *buffer_alloc(size_t length);
 buffer_t *buffer_free(buffer_t *buffer);
-int buffer_realloc_data(buffer_t *buffer, uint32_t size);
+int buffer_realloc_data(buffer_t *buffer, size_t size);
 
 //
 // Error handling
 //
 int buffer_error(const buffer_t *buffer);
-int buffer_error_memreq(const buffer_t *buffer);
+size_t buffer_error_memreq(const buffer_t *buffer);
 int buffer_has_error(const buffer_t *buffer);
 void buffer_clear_error(buffer_t *buffer);
 
@@ -66,26 +66,26 @@ uint8_t *buffer_data_ptr(const buffer_t *buffer);
 //
 // Properties
 //
-void buffer_set_data(buffer_t *buffer, uint8_t *data, uint32_t size);
+void buffer_set_data(buffer_t *buffer, uint8_t *data, size_t size);
 uint8_t *buffer_data(const buffer_t *buffer);
-uint32_t buffer_size(const buffer_t *buffer);
-uint32_t buffer_used(const buffer_t *buffer);
+size_t buffer_size(const buffer_t *buffer);
+size_t buffer_used(const buffer_t *buffer);
 void buffer_clear(buffer_t *buffer);
-uint32_t buffer_left(const buffer_t *buffer);
+size_t buffer_left(const buffer_t *buffer);
 
 //
 // Position
 //
-uint32_t buffer_tell(const buffer_t *buffer);
-uint32_t buffer_seek(buffer_t *buffer, uint32_t offset);
-uint32_t buffer_skip(buffer_t *buffer, int offset);
-uint32_t buffer_rewind(buffer_t *buffer);
-uint32_t buffer_remaining(const buffer_t *buffer);
+size_t buffer_tell(const buffer_t *buffer);
+size_t buffer_seek(buffer_t *buffer, size_t offset);
+size_t buffer_skip(buffer_t *buffer, ptrdiff_t offset);
+size_t buffer_rewind(buffer_t *buffer);
+size_t buffer_remaining(const buffer_t *buffer);
 
 //
 // Reading (from network-byte-order to host-byte-order)
 //
-int buffer_read(buffer_t *buffer, uint8_t *output, size_t size);
+size_t buffer_read(buffer_t *buffer, uint8_t *output, size_t size);
 uint8_t buffer_read_byte(buffer_t *buffer);
 int8_t buffer_read_int8(buffer_t *buffer);
 int16_t buffer_read_int16(buffer_t *buffer);
@@ -103,7 +103,7 @@ char *buffer_strndup(buffer_t *buffer, size_t size);
 // Writing (from host-byte-order to network-byte-order)
 //
 // TODO(jweyrich): how to deal with _used_ on writing operations?
-int buffer_write(buffer_t *buffer, const uint8_t *input, size_t size);
+size_t buffer_write(buffer_t *buffer, const uint8_t *input, size_t size);
 void buffer_write_byte(buffer_t *buffer, uint8_t input);
 void buffer_write_int8(buffer_t *buffer, int8_t input);
 void buffer_write_int16(buffer_t *buffer, int16_t input);

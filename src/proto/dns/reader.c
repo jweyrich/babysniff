@@ -23,8 +23,8 @@ uint8_t *read_bytes(buffer_t *from_buffer, int *error, size_t size) {
         return NULL;
     }
 
-    int read = buffer_read(from_buffer, data, size);
-    if (read <= 0) {
+    size_t read = buffer_read(from_buffer, data, size);
+    if (read < size) {
         *error = -5; // Buffer read failed
         free(data);
         return NULL;
