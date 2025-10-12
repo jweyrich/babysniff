@@ -1,17 +1,16 @@
-#include <arpa/inet.h>
-#include <net/ethernet.h>
-#include <stdio.h>
-
-#include "system.h"
-#ifdef OS_LINUX
-#	include <netinet/ether.h> // for `ether_ntoa`
-#endif
-
+#include "compat/network_compat.h"
 #include "config.h"
 #include "log.h"
 #include "macros.h"
 #include "proto_ops.h"
+#include "system.h"
 
+#include <stdio.h>
+
+#ifndef OS_WINDOWS
+#	include <net/ethernet.h>
+#	include <netinet/ether.h> // for `ether_ntoa`
+#endif
 
 // TODO(jweyrich): linux uses struct ethhdr
 int sniff_eth_fromwire(const uint8_t *packet, size_t length, const config_t *config) {

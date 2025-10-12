@@ -1,9 +1,10 @@
 #pragma once
 
 #include "bpf/bpf_types.h"
+#include "compat/network_compat.h"
+
 #include <stdint.h>
 #include <stdbool.h>
-#include <netinet/in.h>
 
 // Common packet offsets for Ethernet frames
 #define ETH_HLEN          14    // Ethernet header length

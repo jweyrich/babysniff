@@ -3,16 +3,27 @@
 #endif
 
 #include "bpf/bpf_filter.h"
+
+#include "bpf/bpf_vm.h"
+#include "compat/network_compat.h"
+#include "compat/string_compat.h"
+#include "system.h"
+
+#include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
-#include <arpa/inet.h>
-#include <netinet/ip.h>
-#include <netdb.h>
-#include <errno.h>
-#include <ctype.h>
-#include <net/ethernet.h> // For ETHERTYPE_IP
+
+#ifndef OS_WINDOWS
+#   include <strings.h> // Windows doesn't have strings.h
+#   include <netinet/ip.h>
+#   include <netdb.h>
+#   include <net/ethernet.h> // For ETHERTYPE_IP
+#else
+// Windows doesn't have strings.h
+#   define strcasecmp _stricmp
+#endif
 
 // Helper function to resolve hostname to IP address
 static int resolve_hostname(const char *hostname, struct in_addr *addr) {
@@ -229,7 +240,7 @@ int bpf_compile_filter(const char *filter_string, bpf_program_t *program) {
     if (!program) {
         return -1;
     }
-    
+
     if (!filter_string || strlen(filter_string) == 0) {
         return bpf_create_empty_filter(program);
     }

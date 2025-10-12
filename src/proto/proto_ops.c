@@ -1,7 +1,14 @@
 #include "proto_ops.h"
-#include <net/ethernet.h>
-#include <netinet/ip.h>
+
+#include "compat/network_compat.h"
+#include "system.h"
+
 #include <string.h>
+
+#ifndef OS_WINDOWS
+#	include <net/ethernet.h>
+#	include <netinet/ip.h>
+#endif
 
 int sniff_packet_fromwire(const uint8_t *packet, size_t length, int protocol, const config_t *config) {
 	int result = 0;

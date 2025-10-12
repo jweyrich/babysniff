@@ -3,10 +3,12 @@
 #endif
 
 #include "bpf/bpf_vm.h"
+
+#include "compat/network_compat.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
 
 //
 // Reference man-page:

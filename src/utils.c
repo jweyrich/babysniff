@@ -1,10 +1,16 @@
 #include "utils.h"
-#include <arpa/inet.h> // for struct in_addr + in6_addr
-#include <netinet/if_ether.h> // for struct ether_addr
-#include <netinet/in.h>
+
+#include "compat/network_compat.h"
+#include "system.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h> // for strlen
+
+#ifndef OS_WINDOWS
+#	include <netinet/if_ether.h> // for struct ether_addr
+#	include <net/ethernet.h> // for ETHER_ADDR_LEN
+#endif
 
 char *utils_ether_addr_to_str(char *output, size_t output_size, const struct ether_addr *input) {
 	if (output_size < ETHER_ADDR_LEN * 3) { // Minimum size is 18 bytes including the null terminator
