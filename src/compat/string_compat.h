@@ -1,16 +1,13 @@
 #pragma once
 
+#include "system.h"
+
 #include <stddef.h>
-#include <string.h>
 
-#ifndef strnlen
-size_t strnlen(const char *s, size_t maxlen);
-#endif
-
-#ifndef strndup
+#ifdef OS_WINDOWS
+// Windows doesn't have strndup
 char *strndup(char const *s, size_t n);
-#endif
 
-#ifndef fast_strcat
-char *fast_strcat(char *dest, char *src);
+// Windows doesn't have strtok_r, so we provide a wrapper for strtok_s
+char *strtok_r(char *str, const char *delim, char **saveptr);
 #endif
