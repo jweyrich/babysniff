@@ -11,6 +11,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,6 +59,9 @@ int bpf_set_instructions(bpf_program_t *program, const struct bpf_insn *instns, 
         bpf_free_program(program);
     }
     const size_t count = total_size / sizeof(struct bpf_insn);
+    if (count > UINT_MAX) {
+        return -1; // Count exceeds unsigned int range
+    }
     program->bf_len = count;
     program->bf_insns = calloc(program->bf_len, sizeof(struct bpf_insn));
     if (!program->bf_insns) {
