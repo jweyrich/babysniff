@@ -1,13 +1,15 @@
 #include "rrsig.h"
+
+#include "compat/network_compat.h"
+#include "compat/time_compat.h"
 #include "log.h"
 #include "types/buffer.h"
 #include "proto/dns/name.h"
 #include "proto/dns/sections/rdata.h"
 #include "proto/dns/arrays.h"
 #include "reader.h"
+
 #include <stdlib.h>
-#include <netinet/in.h> // for ntohs and ntohl
-#include <time.h> // for gmtime_r + strftime
 
 char *read_signature(buffer_t *from_buffer, int *error, size_t size) {
 	return read_bytes_and_base64(from_buffer, error, size);

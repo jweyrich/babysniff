@@ -1,23 +1,21 @@
 #ifndef _DEFAULT_SOURCE
 #   define _DEFAULT_SOURCE
 #endif
-#include <arpa/inet.h>
-#include <stdio.h>
 
-#include "system.h"
-#ifdef OS_LINUX
-#	include <netinet/ether.h>
-#endif
-#include <netinet/if_ether.h>
-
+#include "compat/network_compat.h"
 #include "config.h"
 #include "log.h"
 #include "proto_ops.h"
-
+#include "system.h"
 #include "types/pair.h"
 #include "utils.h"
 
-// TODO(jweyrich): request/responses: http://64.233.163.132/search?q=cache:fTLz8j_w-0YJ:www.few.vu.nl/~cn/arp.c+arp_hln&cd=1&hl=en&ct=clnk
+#include <stdio.h>
+
+#ifndef OS_WINDOWS
+#	include <netinet/ether.h>
+#	include <netinet/if_ether.h>
+#endif
 
 typedef enum {
 	ARP_ARRAY_HRD,
@@ -63,14 +61,6 @@ static const pair_array_t arp_array_pro = {
 	.count = sizeof(arp_array_pro_data) / sizeof(pair_t),
 	.data = arp_array_pro_data
 };
-
-#ifndef OS_LINUX
-#	define ARPOP_RREQUEST	ARPOP_REVREQUEST
-#	define ARPOP_RREPLY		ARPOP_REVREPLY
-#	define ARPOP_InREQUEST	ARPOP_INVREQUEST
-#	define ARPOP_InREPLY	ARPOP_INVREPLY
-#	define ARPOP_NAK		10
-#endif
 
 static pair_t arp_array_op_data[] = {
 	{ ARPOP_REQUEST,	"Request"  }, // request to resolve address

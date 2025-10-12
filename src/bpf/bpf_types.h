@@ -3,15 +3,20 @@
 
 #include <stdint.h>
 
+#include "system.h"
+
 // Include system BPF headers when available
-#ifdef __linux__
-    #include <linux/filter.h>
+#ifdef OS_LINUX
+#   include <linux/filter.h>
     // Linux compatibility: we'll define our own structures below
-#elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
-    #include <net/bpf.h>
-    // BSD systems (including macOS) have bpf_insn and bpf_program natively
-    #define HAVE_BPF_INSN 1
-    #define HAVE_BPF_PROGRAM 1
+#elif defined(OS_BSD_BASED)
+#   include <net/bpf.h>
+// BSD systems (including macOS) have bpf_insn and bpf_program natively
+#   define HAVE_BPF_INSN 1
+#   define HAVE_BPF_PROGRAM 1
+#elif defined(OS_WINDOWS) || defined(OS_CYGWIN)
+// Windows doesn't have native BPF support, use our own definitions
+// Nothing to include here
 #endif
 
 // Define our unified BPF structures (used on Linux and as fallback)
@@ -35,10 +40,10 @@ typedef struct bpf_program bpf_program_t;
 
 // Macros for filter block array initializers
 #ifndef BPF_STMT
-#define BPF_STMT(code, k) { (unsigned short)(code), 0, 0, k }
+#   define BPF_STMT(code, k) { (unsigned short)(code), 0, 0, k }
 #endif
 #ifndef BPF_JUMP
-#define BPF_JUMP(code, k, jt, jf) { (unsigned short)(code), jt, jf, k }
+#   define BPF_JUMP(code, k, jt, jf) { (unsigned short)(code), jt, jf, k }
 #endif
 
 typedef enum {

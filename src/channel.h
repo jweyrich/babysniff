@@ -1,6 +1,7 @@
 #pragma once
 
 #include "channel_ops_common.h"
+#include "compat/network_compat.h"
 #include "bpf/bpf_filter.h"
 #include "bpf/bpf_types.h"
 #include <stdint.h>
@@ -22,7 +23,7 @@ typedef struct channel_bpf_filter {
 } channel_bpf_filter_t;
 
 typedef struct sniff_channel {
-	int fd;
+	socket_fd_t fd;
 	char *ifname; // interface name
 	size_t buffer_size; // read buffer size
 	uint8_t *buffer; // read buffer
@@ -35,11 +36,11 @@ typedef struct sniff_channel {
 // Initialization
 //
 #define CHANNEL_INITIALIZER \
-	{ -1, NULL, 0, NULL, { '\0' }, { 0 }, { 0, NULL }, 0 }
+	{ INVALID_FD, NULL, 0, NULL, { '\0' }, { 0 }, { 0, NULL }, 0 }
 #define CHANNEL_INIT(var) \
 	do { \
 		channel_t *ptr = (var); \
-		ptr->fd = -1; \
+		ptr->fd = INVALID_FD; \
 		ptr->ifname = NULL; \
 		ptr->buffer_size = 0; \
 		ptr->buffer = NULL; \

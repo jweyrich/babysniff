@@ -1,9 +1,10 @@
 #include "soa.h"
+
+#include "compat/network_compat.h"
 #include "log.h"
 #include "types/buffer.h"
 #include "proto/dns/name.h"
 #include "proto/dns/sections/rdata.h"
-#include <netinet/in.h> // for ntohs and ntohl
 
 int parse_rdata_soa(dns_rdata_t *rdata, buffer_t *buffer) {
 	rdata->soa.mname = parse_name(buffer);

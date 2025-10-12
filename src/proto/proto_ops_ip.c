@@ -1,30 +1,31 @@
 #ifndef _DEFAULT_SOURCE
 #   define _DEFAULT_SOURCE
 #endif
-#include <arpa/inet.h>
-#include <net/ethernet.h>
-#include <netinet/ip.h>
-#include <netdb.h>
-#include <stdio.h>
 
+#include "compat/network_compat.h"
 #include "config.h"
 #include "log.h"
 #include "macros.h"
 #include "proto_ops.h"
+#include "system.h"
 #include "utils.h"
 
-// TODO(jweyrich): parse options
-// http://64.233.163.132/search?q=cache:IxxD7kq2CAAJ:www.w00w00.org/files/sectools/fragrouter/print.c+IP_OFFMASK&cd=1&hl=en&ct=clnk
-// TODO(jweyrich): linux uses struct iphdr
+#include <stdio.h>
+
+#ifndef OS_WINDOWS
+#	include <net/ethernet.h>
+#	include <netinet/ip.h>
+#	include <netdb.h>
+#endif
 
 int sniff_ip_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	int result = 0;
-	
+
 	// Basic bounds check before accessing any fields
 	if (length < sizeof(struct ip)) {
 		return -1;
 	}
-	
+
 	const struct ip *header = (struct ip *)packet;
 	uint16_t header_len = header->ip_hl << 2;
 	uint16_t ip_len = ntohs(header->ip_len);

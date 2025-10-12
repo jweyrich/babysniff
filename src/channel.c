@@ -1,9 +1,15 @@
 #include "channel.h"
 #include "channel_ops.h"
+#include "system.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+
+#ifdef OS_WINDOWS
+#	include <winsock2.h>
+#else
+#	include <unistd.h>
+#endif
 
 channel_t *sniff_alloc_channel(void) {
 	channel_t *channel = malloc(sizeof(channel_t));
@@ -17,8 +23,9 @@ void sniff_free_channel(channel_t *channel) {
 	if (channel == NULL)
 		return;
 
-	if (channel->fd != -1)
+	if (channel->fd != INVALID_FD) {
 		close(channel->fd);
+	}
 
 	// Clear BPF filter if set
 	sniff_channel_clear_bpf_filter(channel);

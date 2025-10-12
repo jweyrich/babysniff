@@ -1,11 +1,13 @@
 #include "rr.h"
+
+#include "compat/network_compat.h"
 #include "log.h"
 #include "proto/dns/arrays.h"
 #include "proto/dns/name.h"
 #include "types/buffer.h"
-#include <arpa/inet.h> // for ntohs + struct in_addr + in6_addr
-#include <stdlib.h>  // for malloc
-#include <string.h>  // for memset
+
+#include <stdlib.h> // for malloc
+#include <string.h> // for memset
 
 dns_rr_t *parse_rr(buffer_t *buffer) {
 	dns_rr_t *rr = malloc(sizeof(dns_rr_t));
