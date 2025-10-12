@@ -198,7 +198,12 @@ int sniff_readloop(channel_t *channel, long timeout, const config_t *config) {
 			while (begin < end) {
 				header = (struct bpf_hdr *)begin;
 				current = begin + header->bh_hdrlen;
-				sniff_packet_fromwire(current, header->bh_caplen, 0, config);
+
+				// Apply BPF filter if set
+				if (sniff_channel_apply_bpf_filter(channel, current, bytes_read)) {
+					sniff_packet_fromwire(current, header->bh_caplen, 0, config);
+				}
+
 				begin += BPF_WORDALIGN(header->bh_caplen + header->bh_hdrlen);
 			}
 		}
