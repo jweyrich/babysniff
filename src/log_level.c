@@ -1,7 +1,7 @@
 #include "log_level.h"
 #include <stdio.h>
 
-static log_level_e g_loglevel = LOGLEVEL_ERROR;
+static log_level_e g_loglevel = LOGLEVEL_WARN;
 
 bool log_level_is_valid(int level) {
     return level >= LOGLEVEL_FATAL && level <= LOGLEVEL_TRACE;
