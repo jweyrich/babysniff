@@ -62,8 +62,12 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	if (geteuid() != 0) {
+	if (!is_running_as_superuser()) {
+#ifdef OS_WINDOWS
+		fprintf(stderr, "Requires administrator privileges\n");
+#else
 		fprintf(stderr, "Requires superuser privileges\n");
+#endif
 		return EXIT_FAILURE;
 	}
 
