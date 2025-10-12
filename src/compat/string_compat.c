@@ -1,17 +1,13 @@
 #include "compat/string_compat.h"
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
 
-#ifndef strnlen
-size_t strnlen(const char *s, size_t maxlen) {
-	const char *p;
-	for (p = s; *p && maxlen--; ++p);
-	return p - s;
-}
-#endif // ifndef strnlen
+#include "system.h"
 
-#ifndef strndup
+#include <stdlib.h> // for malloc
+#include <string.h> // for memcpy, strnlen, strtok_s
+
+#ifdef OS_WINDOWS
+
+// Windows doesn't have strndup
 char *strndup(const char *str, size_t n) {
 	size_t len = strnlen(str, n);
 	char *result = malloc(len + 1);
@@ -20,12 +16,9 @@ char *strndup(const char *str, size_t n) {
 	result[len] = '\0';
 	return memcpy(result, str, len);
 }
-#endif // ifndef strndup
 
-#ifndef fast_strcat
-char *fast_strcat(char *dest, char *src) {
-	 while (*dest != '\0') dest++;
-	 while ((*dest++ = *src++) != '\0');
-	 return --dest;
+// Windows doesn't have strtok_r, so we provide a wrapper for strtok_s
+char *strtok_r(char *str, const char *delim, char **saveptr) {
+	return strtok_s(str, delim, saveptr);
 }
-#endif // ifndef fast_strcat
+#endif // OS_WINDOWS
