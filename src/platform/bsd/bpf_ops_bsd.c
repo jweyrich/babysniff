@@ -6,8 +6,8 @@
 #include <sys/ioctl.h>
 #include <net/bpf.h>
 #include <errno.h>
-#include "../../channel.h"
-#include "../../channel_ops.h"
+#include "channel.h"
+#include "channel_ops.h"
 
 int bsd_bpf_attach_filter(channel_t *channel) {
 	// TODO(jweyrich): Drain packets that arrived before the filter was set! See https://natanyellin.com/posts/ebpf-filtering-done-right/
