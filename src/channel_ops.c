@@ -1,34 +1,21 @@
 #include "channel_ops.h"
-#include <errno.h>
-#include <fcntl.h>
+#include "system.h"
 #include <stdarg.h>
 #include <stdio.h>
-#include <sys/ioctl.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef OS_WINDOWS
+#	include <winsock2.h>
+#else
+#	include <errno.h>
+#	include <fcntl.h>
+#	include <sys/ioctl.h>
+#endif
+
 #include "bpf/bpf_filter.h"
 #include "bpf/bpf_vm.h"
 #include "bpf/bpf_types.h"
-
-int sniff_setnonblock(channel_t *channel, int nonblock) {
-#ifdef WIN32
-	unsigned long nonblocking = nonblock;
-	ioctlsocket(channel->fd, FIONBIO, &nonblocking);
-#else
-	long flags;
-	if ((flags = fcntl(channel->fd, F_GETFL)) < 0) {
-		sniff_channel_set_error_msg(channel, "fcntl(F_GETFL): %s", sniff_strerror(errno));
-		return -1;
-	}
-	if (nonblock)
-		flags |= O_NONBLOCK;
-	else
-		flags &= ~O_NONBLOCK;
-	if (fcntl(channel->fd, F_SETFL, flags) == -1) {
-		sniff_channel_set_error_msg(channel, "fcntl(F_SETFL): %s", sniff_strerror(errno));
-		return -1;
-	}
-#endif
-	return 0;
-}
 
 int sniff_channel_set_error_msg(channel_t *channel, const char *format, ...) {
 	int ret;

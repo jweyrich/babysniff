@@ -20,7 +20,6 @@
 //#include <netdb.h>
 //#include <netinet/if_ether.h>
 //#include <netinet/in_systm.h>
-//#include <netinet/in_systm.h>
 //#include <netinet/ip_icmp.h>
 //#include <netinet/ip.h>
 //#include <netinet/tcp.h>
@@ -98,7 +97,20 @@ static int linux_set_promisc(channel_t *channel, const char *ifname, int on) {
 }
 
 static int linux_set_nonblock(channel_t *channel, int on) {
-	return sniff_setnonblock(channel, on);
+	long flags;
+	if ((flags = fcntl(channel->fd, F_GETFL)) < 0) {
+		sniff_channel_set_error_msg(channel, "fcntl(F_GETFL): %s", sniff_strerror(errno));
+		return -1;
+	}
+	if (on)
+		flags |= O_NONBLOCK;
+	else
+		flags &= ~O_NONBLOCK;
+	if (fcntl(channel->fd, F_SETFL, flags) == -1) {
+		sniff_channel_set_error_msg(channel, "fcntl(F_SETFL): %s", sniff_strerror(errno));
+		return -1;
+	}
+	return 0;
 }
 
 static int linux_set_buffersize(channel_t *channel, size_t size) {
@@ -161,7 +173,17 @@ void sniff_close(channel_t *channel) {
 	sniff_free_channel(channel);
 }
 
+int sniff_setnonblock(channel_t *channel, int nonblock) {
+	if (channel == NULL || channel->fd == INVALID_FD)
+		return -1;
+
+	return linux_set_nonblock(channel, nonblock);
+}
+
 int sniff_readloop(channel_t *channel, long timeout, const config_t *config) {
+	if (channel == NULL || channel->fd == INVALID_FD)
+		return -1;
+
 	uint8_t *begin, *end, *current;
 	struct sockaddr packet_info;
 	size_t packet_info_size = sizeof(struct sockaddr_ll);

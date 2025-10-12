@@ -166,7 +166,17 @@ void sniff_close(channel_t *channel) {
 	sniff_free_channel(channel);
 }
 
+int sniff_setnonblock(channel_t *channel, int nonblock) {
+	if (channel == NULL || channel->fd == INVALID_FD)
+		return -1;
+
+	return bpf_set_nonblock(channel, nonblock);
+}
+
 int sniff_readloop(channel_t *channel, long timeout, const config_t *config) {
+	if (channel == NULL || channel->fd == INVALID_FD)
+		return -1;
+
 	uint8_t *begin, *end, *current;
 	struct bpf_hdr *header;
 	ssize_t bytes_read;
