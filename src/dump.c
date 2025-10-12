@@ -2,20 +2,22 @@
 #include <ctype.h>
 
 void print_bits(FILE *stream, uint64_t value, size_t size) {
-    register int32_t i;
     size *= 8;
-    for (i = size - 1; i >= 0; --i)
-        fputc((value & (1 << i)) == 0 ? '0' : '1', stream);
+    for (size_t i = 0; i < size; ++i) {
+        size_t bit_pos = size - 1 - i;
+        fputc((value & (1ULL << bit_pos)) == 0 ? '0' : '1', stream);
+    }
 }
 
 void dump_hex(FILE *stream, const uint8_t *data, size_t size, uint32_t offset) {
     int ch;
-    uint32_t i, j, cols;
+    size_t i, j;
+    uint32_t cols;
 
     for (i = 0; i < size; i += 16) {
-        fprintf(stream, "%04x: ", i + offset);
-        cols = size - i;
-        cols = cols > 16 ? 16 : cols;
+        fprintf(stream, "%04x: ", (uint32_t)i + offset);
+        size_t remaining = size - i;
+        cols = remaining > 16 ? 16 : (uint32_t)remaining;
 
         for (j = 0; j < cols; ++j) {
             if ((j % 2) == 0)
