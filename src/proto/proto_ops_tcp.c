@@ -77,9 +77,8 @@ int sniff_tcp_fromwire(const uint8_t *packet, size_t length, const config_t *con
 
 	if (sport == 53 || dport == 53) {
 		buffer_t buffer = BUFFER_INITIALIZER;
-		size_t dns_len;
 		buffer_set_data(&buffer, (uint8_t *)packet, length);
-		dns_len = buffer_read_uint16(&buffer);
+		uint16_t dns_len = buffer_read_uint16(&buffer);
 		dns_len = ntohs(dns_len);
 		if (!buffer_has_error(&buffer)) {
 			sniff_dns_fromwire(buffer_data_ptr(&buffer), dns_len, config);
