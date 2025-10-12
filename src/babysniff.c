@@ -8,13 +8,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "arguments.h"
 #include "config.h"
 #include "daemon.h"
 #include "security.h"
 #include "signal_handler.h"
+#include "stdio_utils.h"
 #include "system.h"
 
 int main(int argc, char **argv) {
@@ -52,12 +52,10 @@ int main(int argc, char **argv) {
 	}
 
 	if (args.background) {
-		// Redirect std{in|err|out} to /dev/null
-		int nullfd = open("/dev/null", O_RDWR);
-		dup2(nullfd, STDOUT_FILENO);
-		dup2(nullfd, STDERR_FILENO);
-		dup2(nullfd, STDIN_FILENO);
-		close(nullfd);
+		if (stdio_redirect_to_null() < 0) {
+			fprintf(stderr, "Warning: Failed to redirect stdio to null device\n");
+			// Continue anyway - this is not a fatal error for daemon mode
+		}
 	}
 
 	channel_t *channel = sniff_open(args.interface_name, 0, 0);
