@@ -169,7 +169,12 @@ int bpf_execute_filter(const bpf_program_t *program, const uint8_t *packet, uint
                         vm.A >>= (BPF_SRC(code) == BPF_X) ? vm.X : insn->k;
                         break;
                     case BPF_NEG:
-                        vm.A = -vm.A;
+                        // Cast to signed for negation, then back to unsigned to avoid compiler warning
+                        // about applying unary minus to unsigned type.
+                        // Both approaches (-vm.A and this cast) produce identical results due to C's
+                        // modular arithmetic, but implementations vary: Linux kernel uses (u32)-A,
+                        // libpcap uses -A directly.
+                        vm.A = (uint32_t)(-(int32_t)vm.A);
                         break;
                     case BPF_MOD:
                         {
