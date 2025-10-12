@@ -5,6 +5,7 @@
 #include "bpf/bpf_vm.h"
 
 #include "compat/network_compat.h"
+#include "log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -150,6 +151,7 @@ int bpf_execute_filter(const bpf_program_t *program, const uint8_t *packet, uint
                             if (divisor != 0) {
                                 vm.A /= divisor;
                             } else {
+                                LOG_DEBUG("rejected packet: division by zero");
                                 return 0; // Division by zero, reject packet
                             }
                         }
@@ -175,6 +177,7 @@ int bpf_execute_filter(const bpf_program_t *program, const uint8_t *packet, uint
                             if (divisor != 0) {
                                 vm.A %= divisor;
                             } else {
+                                LOG_DEBUG("rejected packet: division by zero");
                                 return 0; // Division by zero, reject packet
                             }
                         }
@@ -234,7 +237,11 @@ int bpf_execute_filter(const bpf_program_t *program, const uint8_t *packet, uint
                 break;
 
             case BPF_RET:
-                return (BPF_RVAL(code) == BPF_A) ? vm.A : insn->k;
+                {
+                    uint32_t val = (BPF_RVAL(code) == BPF_A) ? vm.A : insn->k;
+                    LOG_DEBUG("accepted packet: return value %u", val);
+                    return val;
+                }
 
             case BPF_MISC:
                 switch (BPF_MISCOP(code)) {
@@ -250,5 +257,6 @@ int bpf_execute_filter(const bpf_program_t *program, const uint8_t *packet, uint
         pc++;
     }
 
+    LOG_DEBUG("rejected packet: fall through");
     return 0; // Default reject if we fall through
 }
