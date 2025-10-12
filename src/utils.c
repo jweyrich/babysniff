@@ -66,16 +66,37 @@ int utils_relative_path(char *output, size_t output_size, const char *absolute_p
 	if (abs_len >= output_size) {
 		return -1; // Output buffer too small
 	}
-	// Find the last '/' in both paths
-	const char *cur_last_slash = strrchr(current_file_path, '/');
-	const char *abs_last_slash = strrchr(absolute_path, '/');
+
+	// Find the last path separator in both paths (handles both / and \)
+	const char *cur_slash = strrchr(current_file_path, '/');
+	const char *cur_backslash = strrchr(current_file_path, '\\');
+	const char *cur_last_slash = (!cur_slash) ? cur_backslash :
+								  (!cur_backslash) ? cur_slash :
+								  (cur_slash > cur_backslash) ? cur_slash : cur_backslash;
+
+	const char *abs_slash = strrchr(absolute_path, '/');
+	const char *abs_backslash = strrchr(absolute_path, '\\');
+	const char *abs_last_slash = (!abs_slash) ? abs_backslash :
+								  (!abs_backslash) ? abs_slash :
+								  (abs_slash > abs_backslash) ? abs_slash : abs_backslash;
+
 	if (!cur_last_slash || !abs_last_slash) {
 		return -1; // Invalid path format
 	}
-	size_t cur_dir_len = cur_last_slash - current_file_path + 1; // Include the '/'
-	size_t abs_dir_len = abs_last_slash - absolute_path + 1; // Include the '/'
-	// Compare directory parts
-	if (cur_dir_len > abs_dir_len || strncmp(current_file_path, absolute_path, cur_dir_len) != 0) {
+	size_t cur_dir_len = cur_last_slash - current_file_path + 1; // Include the separator
+	size_t abs_dir_len = abs_last_slash - absolute_path + 1; // Include the separator
+
+	// Compare directory parts (case-insensitive on Windows, case-sensitive on Unix)
+	int dir_match = (cur_dir_len <= abs_dir_len);
+	if (dir_match) {
+#ifdef OS_WINDOWS
+		dir_match = (_strnicmp(current_file_path, absolute_path, cur_dir_len) == 0);
+#else
+		dir_match = (strncmp(current_file_path, absolute_path, cur_dir_len) == 0);
+#endif
+	}
+
+	if (!dir_match) {
 		// No common directory, return the original absolute path
 		if (abs_len + 1 > output_size) {
 			return -1; // Output buffer too small
@@ -84,12 +105,14 @@ int utils_relative_path(char *output, size_t output_size, const char *absolute_p
 		output[output_size - 1] = '\0'; // Ensure null termination
 		return 0;
 	}
+
 	// Common directory found, construct relative path
 	const char *relative_part = absolute_path + cur_dir_len;
 	size_t relative_part_len = abs_len - cur_dir_len;
 	if (relative_part_len + 1 > output_size) {
 		return -1; // Output buffer too small
 	}
+
 	strncpy(output, relative_part, relative_part_len);
 	output[relative_part_len] = '\0'; // Ensure null termination
 	return 0;
