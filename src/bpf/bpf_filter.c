@@ -11,6 +11,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,7 +59,13 @@ int bpf_set_instructions(bpf_program_t *program, const struct bpf_insn *instns, 
         bpf_free_program(program);
     }
     const size_t count = total_size / sizeof(struct bpf_insn);
-    program->bf_len = count;
+    if (count > UINT_MAX) {
+        // Catch potential overflow in systems where `unsigned int` is smaller than `size_t`.
+        // In 32-bit systems, size_t is usually 32 bits, so this condition is always false.
+        // In 64-bit systems, size_t is usually 64 bits, so this condition can be true.
+        return -1; // Count exceeds unsigned int range
+    }
+    program->bf_len = (unsigned int)count;
     program->bf_insns = calloc(program->bf_len, sizeof(struct bpf_insn));
     if (!program->bf_insns) {
         return -1;
