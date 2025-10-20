@@ -6,17 +6,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// Common packet offsets for Ethernet frames
-#define ETH_HLEN          14    // Ethernet header length
-#define IP_HLEN_OFFSET    14    // IP header length offset from start of packet
-#define IP_PROTO_OFFSET   23    // IP protocol offset from start of packet
-#define IP_SRC_OFFSET     26    // IP source address offset
-#define IP_DST_OFFSET     30    // IP destination address offset
-#define TCP_SPORT_OFFSET  34    // TCP source port offset (assumes 20 byte IP header)
-#define TCP_DPORT_OFFSET  36    // TCP destination port offset
-#define UDP_SPORT_OFFSET  34    // UDP source port offset
-#define UDP_DPORT_OFFSET  36    // UDP destination port offset
-
 // Filter compilation and execution functions
 int bpf_compile_filter(const char *filter_string, bpf_program_t *program);
 void bpf_free_program(bpf_program_t *program);
@@ -63,6 +52,17 @@ typedef struct bpf_filter_node {
         } logical;
     } data;
 } bpf_filter_node_t;
+
+// Datalink types to handle different packet formats
+typedef enum {
+    DATALINK_ETHERNET,    // Packets include Ethernet header (Linux/BSD)
+    DATALINK_RAW_IP,      // Packets start with IP header (Windows raw sockets)
+    DATALINK_AUTO         // Auto-detect based on first packet
+} datalink_type_t;
+
+// Datalink type functions
+void bpf_set_datalink_type(datalink_type_t datalink_type);
+datalink_type_t bpf_get_datalink_type(void);
 
 // Parser functions
 bpf_filter_node_t *bpf_parse_filter_expression(const char *expression);
