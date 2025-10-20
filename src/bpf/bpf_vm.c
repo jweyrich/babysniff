@@ -244,7 +244,7 @@ int bpf_execute_filter(const bpf_program_t *program, const uint8_t *packet, uint
             case BPF_RET:
                 {
                     uint32_t val = (BPF_RVAL(code) == BPF_A) ? vm.A : insn->k;
-                    LOG_DEBUG("accepted packet: return value %u", val);
+                    LOG_DEBUG("%s packet: return value %u", val != 0 ? "accepted" : "rejected", val);
                     return val;
                 }
 
