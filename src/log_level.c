@@ -27,7 +27,6 @@ const char *log_level_name(log_level_e level) {
     }
 
     static const char *level_name[] = {
-		"UNSET",
         "FATAL",
         "ERROR",
         "WARN",
