@@ -4,6 +4,7 @@
 
 #include "bpf/bpf_filter.h"
 
+#include "bpf/bpf_builder.h"
 #include "bpf/bpf_vm.h"
 #include "compat/network_compat.h"
 #include "compat/string_compat.h"
@@ -27,6 +28,7 @@
 #endif
 
 #include <stddef.h> // for offsetof
+#include <stdint.h> // for UINT8_MAX
 
 #ifndef OS_WINDOWS
 #	include <netinet/ip.h>      // for struct ip
@@ -82,76 +84,6 @@ static datalink_type_t detect_datalink_type(const uint8_t *packet, size_t len) {
     return DATALINK_ETHERNET;
 }
 
-// Offset definitions based on datalink type
-typedef struct {
-    int ethertype_offset;     // Offset to EtherType field (-1 if not available)
-    int ip_header_offset;     // Offset to start of IP header
-    int ip_version_offset;    // Offset to IP version/IHL byte
-    int ip_proto_offset;      // Offset to IP protocol field
-    int ip_src_offset;        // Offset to IP source address
-    int ip_dst_offset;        // Offset to IP destination address
-    int tcp_sport_offset;     // Offset to TCP source port
-    int tcp_dport_offset;     // Offset to TCP destination port
-    int udp_sport_offset;     // Offset to UDP source port
-    int udp_dport_offset;     // Offset to UDP destination port
-} bpf_offsets_t;
-
-// Helper macros for offset calculations
-#define ETHER_HDR_SIZE   sizeof(struct ether_header)  // 14 bytes
-#define IP_HDR_SIZE      sizeof(struct ip)             // 20 bytes (minimum)
-#define TCP_HDR_SIZE     sizeof(struct tcphdr)         // 20 bytes (minimum)
-#define UDP_HDR_SIZE     sizeof(struct udphdr)         // 8 bytes
-
-// Get offsets based on datalink type
-static bpf_offsets_t get_bpf_offsets(datalink_type_t datalink) {
-    bpf_offsets_t offsets = {0};
-
-    switch (datalink) {
-        case DATALINK_ETHERNET: {
-            // [ETH_HDR][IP_HDR][TCP_HDR/UDP_HDR][DATA]
-            const int eth_size = ETHER_HDR_SIZE;
-            const int ip_start = eth_size;
-            const int transport_start = ip_start + IP_HDR_SIZE;
-
-            offsets.ethertype_offset = offsetof(struct ether_header, ether_type);
-            offsets.ip_header_offset = ip_start;
-            offsets.ip_version_offset = ip_start;
-            offsets.ip_proto_offset = ip_start + offsetof(struct ip, ip_p);
-            offsets.ip_src_offset = ip_start + offsetof(struct ip, ip_src);
-            offsets.ip_dst_offset = ip_start + offsetof(struct ip, ip_dst);
-            offsets.tcp_sport_offset = transport_start + offsetof(struct tcphdr, th_sport);
-            offsets.tcp_dport_offset = transport_start + offsetof(struct tcphdr, th_dport);
-            offsets.udp_sport_offset = transport_start + offsetof(struct udphdr, uh_sport);
-            offsets.udp_dport_offset = transport_start + offsetof(struct udphdr, uh_dport);
-            break;
-        }
-
-        case DATALINK_RAW_IP: {
-            // [IP_HDR][TCP_HDR/UDP_HDR][DATA]
-            const int ip_start = 0;
-            const int transport_start = IP_HDR_SIZE;
-
-            offsets.ethertype_offset = -1;  // Not available in raw IP
-            offsets.ip_header_offset = ip_start;
-            offsets.ip_version_offset = ip_start;
-            offsets.ip_proto_offset = offsetof(struct ip, ip_p);
-            offsets.ip_src_offset = offsetof(struct ip, ip_src);
-            offsets.ip_dst_offset = offsetof(struct ip, ip_dst);
-            offsets.tcp_sport_offset = transport_start + offsetof(struct tcphdr, th_sport);
-            offsets.tcp_dport_offset = transport_start + offsetof(struct tcphdr, th_dport);
-            offsets.udp_sport_offset = transport_start + offsetof(struct udphdr, uh_sport);
-            offsets.udp_dport_offset = transport_start + offsetof(struct udphdr, uh_dport);
-            break;
-        }
-
-        default:
-            // Default to Ethernet for backward compatibility
-            return get_bpf_offsets(DATALINK_ETHERNET);
-    }
-
-    return offsets;
-}
-
 // Helper function to resolve hostname to IP address
 static int resolve_hostname(const char *hostname, struct in_addr *addr) {
     const int family = AF_INET; // IPv4 only because we don't yet support IPv6
@@ -199,66 +131,6 @@ int bpf_set_instructions(bpf_program_t *program, const struct bpf_insn *instns, 
     return 0;
 }
 
-// BPF instruction builder for cleaner filter generation
-typedef struct {
-    struct bpf_insn instructions[32];  // Max reasonable size for a filter
-    size_t count;
-} bpf_instruction_builder_t;
-
-static void bpf_builder_init(bpf_instruction_builder_t *builder) {
-    builder->count = 0;
-}
-
-static void bpf_builder_add(bpf_instruction_builder_t *builder, struct bpf_insn insn) {
-    if (builder->count < 32) {
-        builder->instructions[builder->count++] = insn;
-    }
-}
-
-static void bpf_builder_add_load_abs(bpf_instruction_builder_t *builder, int size, int offset) {
-    uint16_t code = BPF_LD | BPF_ABS;
-    switch (size) {
-        case 1: code |= BPF_B; break;  // byte
-        case 2: code |= BPF_H; break;  // half-word
-        case 4: code |= BPF_W; break;  // word
-        default:
-            // Invalid size
-            fprintf(stderr, "bpf_builder_add_load_abs: Invalid size %d\n", size);
-            abort();
-    }
-    bpf_builder_add(builder, (struct bpf_insn)BPF_STMT(code, offset));
-}
-
-static void bpf_builder_add_jump_eq(bpf_instruction_builder_t *builder, uint32_t value, int jt, int jf) {
-    bpf_builder_add(builder, (struct bpf_insn)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, value, jt, jf));
-}
-
-static void bpf_builder_add_alu_and(bpf_instruction_builder_t *builder, uint32_t mask) {
-    bpf_builder_add(builder, (struct bpf_insn)BPF_STMT(BPF_ALU | BPF_AND | BPF_K, mask));
-}
-
-static void bpf_builder_add_return(bpf_instruction_builder_t *builder, uint32_t value) {
-    bpf_builder_add(builder, (struct bpf_insn)BPF_STMT(BPF_RET | BPF_K, value));
-}
-
-static void bpf_builder_add_load_x_msh(bpf_instruction_builder_t *builder, int offset) {
-    bpf_builder_add(builder, (struct bpf_insn)BPF_STMT(BPF_LDX | BPF_B | BPF_MSH, offset));
-}
-
-static void bpf_builder_add_load_ind(bpf_instruction_builder_t *builder, int size, int offset) {
-    uint16_t code = BPF_LD | BPF_IND;
-    switch (size) {
-        case 2: code |= BPF_H; break;  // half-word
-        case 4: code |= BPF_W; break;  // word
-        default: return; // Invalid size
-    }
-    bpf_builder_add(builder, (struct bpf_insn)BPF_STMT(code, offset));
-}
-
-static int bpf_builder_finalize(bpf_instruction_builder_t *builder, bpf_program_t *program) {
-    return bpf_set_instructions(program, builder->instructions, builder->count * sizeof(struct bpf_insn));
-}
-
 // Protocol information lookup table
 typedef struct {
 	const char *proto_name;
@@ -287,52 +159,6 @@ static const protocol_info_t* find_protocol_info(const char *proto_name) {
     return NULL;
 }
 
-// Common BPF instruction sequence builders
-static void build_ethernet_header_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint16_t ethertype, int reject_offset) {
-    bpf_builder_add_load_abs(builder, 2, offsets.ethertype_offset);  // Load EtherType
-    bpf_builder_add_jump_eq(builder, ethertype, 0, reject_offset);   // If not matching ethertype, jump to reject
-}
-
-static void build_ipv4_version_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, int reject_offset) {
-    bpf_builder_add_load_abs(builder, 1, offsets.ip_version_offset); // Load IP version/IHL byte
-    bpf_builder_add_alu_and(builder, 0xF0);                          // Mask to get only version bits (TODO: depends on endianness?)
-    bpf_builder_add_jump_eq(builder, 0x40, 0, reject_offset);        // Check for IPv4, jump to reject if not (TODO: depends on endianness?)
-}
-
-static void build_ip_address_match(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint32_t ip_addr) {
-    bpf_builder_add_load_abs(builder, 4, offsets.ip_src_offset);     // Load src IP
-    bpf_builder_add_jump_eq(builder, ip_addr, 2, 0);                 // If src IP matches, jump 2 to accept
-    bpf_builder_add_load_abs(builder, 4, offsets.ip_dst_offset);     // Load dst IP
-    bpf_builder_add_jump_eq(builder, ip_addr, 0, 1);                 // If dst IP matches, accept, else jump 1 to reject
-}
-
-static void build_protocol_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint8_t protocol, int reject_offset) {
-    bpf_builder_add_load_abs(builder, 1, offsets.ip_proto_offset);   // Load IP protocol
-    bpf_builder_add_jump_eq(builder, protocol, 0, reject_offset);    // If protocol doesn't match, jump to reject
-}
-
-static void build_port_match_simple(bpf_instruction_builder_t *builder, uint16_t port, int src_offset, int dst_offset) {
-    bpf_builder_add_load_abs(builder, 2, src_offset);                // Load src port
-    bpf_builder_add_jump_eq(builder, port, 2, 0);                    // If src port matches, jump 2 to accept
-    bpf_builder_add_load_abs(builder, 2, dst_offset);                // Load dst port
-    bpf_builder_add_jump_eq(builder, port, 0, 1);                    // If dst port matches, accept, else jump 1 to reject
-}
-
-static void build_port_match_with_protocols(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint16_t port, int reject_offset) {
-    // Check for TCP, UDP, or SCTP
-    bpf_builder_add_load_abs(builder, 1, offsets.ip_proto_offset);   // Load IP protocol
-    bpf_builder_add_jump_eq(builder, IPPROTO_TCP, 2, 0);             // If TCP, jump 2
-    bpf_builder_add_jump_eq(builder, IPPROTO_UDP, 1, 0);             // If UDP, jump 1
-    bpf_builder_add_jump_eq(builder, IPPROTO_SCTP, 0, reject_offset - 4); // If not SCTP, jump to reject
-
-    // For variable IP header length (proper implementation)
-    bpf_builder_add_load_x_msh(builder, offsets.ip_header_offset);   // Load IP header length into X
-    bpf_builder_add_load_ind(builder, 2, offsets.ip_header_offset);  // Load src port using X+offset
-    bpf_builder_add_jump_eq(builder, port, 2, 0);                    // If src port matches, jump 2 to accept
-    bpf_builder_add_load_ind(builder, 2, offsets.ip_header_offset + 2); // Load dst port using X+offset
-    bpf_builder_add_jump_eq(builder, port, 0, 1);                    // If dst port matches, accept, else jump 1 to reject
-}
-
 // Create a simple host filter (matches src or dst IP)
 int bpf_create_host_filter_ex(const char *host, bpf_program_t *program, datalink_type_t datalink) {
     struct in_addr addr;
@@ -349,19 +175,19 @@ int bpf_create_host_filter_ex(const char *host, bpf_program_t *program, datalink
 
     if (datalink == DATALINK_ETHERNET) {
         // For Ethernet, check EtherType first
-        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP, 8);
+        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP);
         // Double-check IP version is 4
-        build_ipv4_version_check(&builder, offsets, 5);
-        build_ip_address_match(&builder, offsets, host_ip);
+        build_ipv4_version_check(&builder, offsets);
+        build_ipv4_address_match(&builder, offsets, host_ip);
     } else {
         // For raw IP, check IPv4 version first
-        build_ipv4_version_check(&builder, offsets, 5);
-        build_ip_address_match(&builder, offsets, host_ip);
+        build_ipv4_version_check(&builder, offsets);
+        build_ipv4_address_match(&builder, offsets, host_ip);
     }
 
     // Add accept/reject instructions
-    bpf_builder_add_return(&builder, 0xffff);  // Accept
-    bpf_builder_add_return(&builder, 0);       // Reject
+    bpf_builder_add_accept(&builder);     // Accept
+    bpf_builder_add_reject(&builder);     // Reject
 
     return bpf_builder_finalize(&builder, program);
 }
@@ -375,22 +201,22 @@ int bpf_create_port_filter_ex(uint16_t port, bpf_program_t *program, datalink_ty
 
     if (datalink == DATALINK_ETHERNET) {
         // For Ethernet, check EtherType first
-        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP, 10);
-        build_port_match_with_protocols(&builder, offsets, port, 10);
+        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP);
+        build_port_match_with_protocols(&builder, offsets, port);
     } else {
         // For raw IP, check IPv4 version first
-        build_ipv4_version_check(&builder, offsets, 9);
+        build_ipv4_version_check(&builder, offsets);
         // Simplified version for raw IP - assumes 20-byte IP header
         bpf_builder_add_load_abs(&builder, 1, offsets.ip_proto_offset);       // Load IP protocol
         bpf_builder_add_jump_eq(&builder, IPPROTO_TCP, 2, 0);                 // If TCP, jump 2 to port check
         bpf_builder_add_jump_eq(&builder, IPPROTO_UDP, 1, 0);                 // If UDP, jump 1 to port check
-        bpf_builder_add_jump_eq(&builder, IPPROTO_SCTP, 0, 4);                // If not SCTP, jump 4 to reject
+        bpf_builder_add_jump_eq_to_reject(&builder, IPPROTO_SCTP, 0);          // If not SCTP, jump to reject
         build_port_match_simple(&builder, port, 20, 22);                      // Assume 20-byte IP header
     }
 
     // Add accept/reject instructions
-    bpf_builder_add_return(&builder, 0xffff);  // Accept
-    bpf_builder_add_return(&builder, 0);       // Reject
+    bpf_builder_add_accept(&builder);     // Accept
+    bpf_builder_add_reject(&builder);     // Reject
 
     return bpf_builder_finalize(&builder, program);
 }
@@ -414,35 +240,35 @@ int bpf_create_protocol_filter_ex(const char *proto_name, bpf_program_t *program
                 return -1; // ARP requires Ethernet header
             }
             bpf_builder_init(&builder);
-            build_ethernet_header_check(&builder, offsets, ETHERTYPE_ARP, 1);
-            bpf_builder_add_return(&builder, 0xffff);  // Accept
-            bpf_builder_add_return(&builder, 0);       // Reject
+            build_ethernet_header_check(&builder, offsets, ETHERTYPE_ARP);
+            bpf_builder_add_accept(&builder);     // Accept
+            bpf_builder_add_reject(&builder);     // Reject
             return bpf_builder_finalize(&builder, program);
         }
 
         if (strcasecmp(proto_name, "ip") == 0) {
             bpf_builder_init(&builder);
             if (datalink == DATALINK_ETHERNET) {
-                build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP, 1);
+                build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP);
             } else {
-                build_ipv4_version_check(&builder, offsets, 1);
+                build_ipv4_version_check(&builder, offsets);
             }
-            bpf_builder_add_return(&builder, 0xffff);  // Accept
-            bpf_builder_add_return(&builder, 0);       // Reject
+            bpf_builder_add_accept(&builder);     // Accept
+            bpf_builder_add_reject(&builder);     // Reject
             return bpf_builder_finalize(&builder, program);
         }
 
         // Handle IP layer protocols (TCP, UDP, ICMP, SCTP)
         bpf_builder_init(&builder);
         if (datalink == DATALINK_ETHERNET) {
-            build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP, 3);
-            build_protocol_check(&builder, offsets, proto_info->ip_protocol, 1);
+            build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP);
+            build_protocol_check(&builder, offsets, proto_info->ip_protocol);
         } else {
-            build_ipv4_version_check(&builder, offsets, 3);
-            build_protocol_check(&builder, offsets, proto_info->ip_protocol, 1);
+            build_ipv4_version_check(&builder, offsets);
+            build_protocol_check(&builder, offsets, proto_info->ip_protocol);
         }
-        bpf_builder_add_return(&builder, 0xffff);  // Accept
-        bpf_builder_add_return(&builder, 0);       // Reject
+        bpf_builder_add_accept(&builder);     // Accept
+        bpf_builder_add_reject(&builder);     // Reject
         return bpf_builder_finalize(&builder, program);
     }
 
@@ -457,15 +283,15 @@ int bpf_create_protocol_filter_ex(const char *proto_name, bpf_program_t *program
     bpf_builder_init(&builder);
 
     if (datalink == DATALINK_ETHERNET) {
-        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP, 3);
-        build_protocol_check(&builder, offsets, proto_num, 1);
+        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP);
+        build_protocol_check(&builder, offsets, proto_num);
     } else {
-        build_ipv4_version_check(&builder, offsets, 3);
-        build_protocol_check(&builder, offsets, proto_num, 1);
+        build_ipv4_version_check(&builder, offsets);
+        build_protocol_check(&builder, offsets, proto_num);
     }
 
-    bpf_builder_add_return(&builder, 0xffff);  // Accept
-    bpf_builder_add_return(&builder, 0);       // Reject
+    bpf_builder_add_accept(&builder);     // Accept
+    bpf_builder_add_reject(&builder);     // Reject
     return bpf_builder_finalize(&builder, program);
 }
 

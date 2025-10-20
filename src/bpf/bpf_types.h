@@ -50,3 +50,10 @@ typedef enum {
 	NATIVE_BPF = 0,
 	EMULATED_BPF,
 } bpf_mode_t;
+
+// Datalink types to handle different packet formats
+typedef enum {
+    DATALINK_ETHERNET,    // Packets include Ethernet header (Linux/BSD)
+    DATALINK_RAW_IP,      // Packets start with IP header (Windows raw sockets)
+    DATALINK_AUTO         // Auto-detect based on first packet
+} datalink_type_t;
