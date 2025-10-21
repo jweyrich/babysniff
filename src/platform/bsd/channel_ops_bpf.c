@@ -90,11 +90,11 @@ static int bpf_set_nonblock(channel_t *channel, int on) {
 }
 
 static int bpf_set_buffersize(channel_t *channel, size_t desired_size) {
-	if (desired_size < BPF_MINBUFSIZE) {
+	if (desired_size != 0 && desired_size < BPF_MINBUFSIZE) {
 		LOG_WARN("Requested buffer size is too small. The minimum is %d", BPF_MINBUFSIZE);
 		desired_size = 0;
 	}
-	if (desired_size > BPF_MAXBUFSIZE) {
+	if (desired_size != 0 && desired_size > BPF_MAXBUFSIZE) {
 		LOG_WARN("Requested buffer size is too large. The maximum is %d", BPF_MAXBUFSIZE);
 		desired_size = 0;
 	}
