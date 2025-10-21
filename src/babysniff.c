@@ -43,6 +43,8 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
+	printf("Using interface: %s\n", args.interface_name);
+
 	if (args.background)
 		daemonize(&args);
 
@@ -58,10 +60,12 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	channel_t *channel = sniff_open(args.interface_name, 0, 0);
+	// Use a reasonable default buffer size (64KB)
+	const size_t default_buffer_size = 65536;
+	channel_t *channel = sniff_open(args.interface_name, 0, default_buffer_size);
 	if (channel == NULL)
 		return EXIT_FAILURE;
-	
+
 	if (sniff_setnonblock(channel, 1) < 0) {
 		fprintf(stderr, "Error setting non-blocking mode: %s\n", sniff_channel_get_error_msg(channel));
 		goto error;
