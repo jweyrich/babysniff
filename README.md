@@ -1,6 +1,6 @@
 # babysniff
 
-A zero-dependency network sniffer, written from scratch, that supports emulated and native cBPF. Runs on Linux, BSD and macOS. Currently supports ETH, ARP, IP, ICMP, TCP, UDP, DNS.
+A zero-dependency network sniffer, written from scratch, that supports emulated and native cBPF. Runs on Linux, BSD, macOS, and Windows. Currently supports ETH, ARP, IP, ICMP, TCP, UDP, DNS.
 
 It's a toy tool that I created to learn more about network protocols. It's still rudimentary when compared to tcpdump or wireshark.
 
@@ -38,9 +38,13 @@ It supports _native_ and _emulated_ BPF filtering capabilities **without dependi
 
 ## How to build
 
+### Linux/macOS/BSD
 ```shell
 cmake . && make
 ```
+
+### Windows
+See [Build on Windows](docs/build-on-windows.md) for detailed Windows build instructions.
 
 ## How to use
 
@@ -89,6 +93,16 @@ babysniff [OPTIONS] [expression]
 - `-E, --bpf-emulator`: Use emulated BPF instead of native BPF
 - `-l, --loglevel`: Set logging verbosity level
 - `-h, --help`: Display help and exit
+
+## Limitations
+
+Due to Microsoft's security restrictions in Windows XP SP2 and later, we cannot capture the Ethernet (data link layer) part of packets on Windows using raw sockets.
+
+**Windows raw sockets are limited**: They operate at the Network Layer (Layer 3) with `SOCK_RAW` and `SIO_RCVALL`, capturing packets starting from the IP header, not the Data Link Layer (Layer 2) where Ethernet headers reside.
+
+**Impact**: On Windows, babysniff can capture and analyze IP, TCP, UDP, ICMP, and DNS protocols correctly, but Ethernet-level information (MAC addresses, VLAN tags, etc) is not available.
+
+**Alternative**: Full Ethernet capture could be achieved by providing a kernel driver like WinPcap/Npcap have, but this is beyond the current scope of this zero-dependency project.
 
 ## Screenshots
 
