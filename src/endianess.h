@@ -16,7 +16,7 @@
 #elif defined(__BIG_ENDIAN__) || \
     (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 #   define __BYTE_ORDER __BIG_ENDIAN
-#eliwf defined(__PDP_ENDIAN__) || \
+#elif defined(__PDP_ENDIAN__) || \
     (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_PDP_ENDIAN__)
 #   define __BYTE_ORDER __PDP_ENDIAN
 #else
@@ -33,5 +33,11 @@
 #   ifndef __USE_MISC
 #       define __USE_MISC
 #   endif
-#   include <endian.h>
+#   if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#       include <machine/endian.h>
+#   elif defined(__linux__)
+#       include <endian.h>
+#   else
+#       include <sys/endian.h> // fallback for other Unix-like systems
+#   endif
 #endif // ifdef OS_WINDOWS
