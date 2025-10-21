@@ -15,6 +15,7 @@
 #include "macros.h"
 #include "proto_ops.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -264,24 +265,41 @@ static int windows_set_nonblock(channel_t *channel, int on) {
 	return 0;
 }
 
-static int windows_set_buffersize(channel_t *channel, size_t size) {
-	int opt_size = (int)size;
-
-	// Set receive buffer size
-	if (setsockopt(channel->fd, SOL_SOCKET, SO_RCVBUF,
-	               (char *)&opt_size, sizeof(opt_size)) == SOCKET_ERROR) {
-		sniff_channel_set_error_msg(channel, "setsockopt(SO_RCVBUF) failed: %d", WSAGetLastError());
-		return -1;
+static int windows_set_buffersize(channel_t *channel, size_t desired_size) {
+	if (desired_size > INT_MAX) {
+		LOG_WARN("Requested buffer size is too large. The maximum is %d", INT_MAX);
+		desired_size = 0;
 	}
 
-	// Allocate our internal buffer
+	int buffer_size = (int)desired_size;
+	socklen_t buffer_size_len = sizeof(buffer_size);
+
+	if (buffer_size == 0) {
+		if (getsockopt(channel->fd, SOL_SOCKET, SO_RCVBUF, (void *)&buffer_size, &buffer_size_len) == SOCKET_ERROR) {
+			sniff_channel_set_error_msg(channel, "getsockopt(SO_RCVBUF) failed: %s", sniff_strerror(errno));
+			// TODO(jweyrich): Ideally we want at least 32KB for performance.
+			channel->buffer_size = SNIFF_DEFAULT_BUFSIZE;
+			// Log a warning but don't fail here
+			LOG_WARN("%s", channel->errmsg);
+		}
+	} else {
+		if (setsockopt(channel->fd, SOL_SOCKET, SO_RCVBUF, (void *)&buffer_size, buffer_size_len) == SOCKET_ERROR) {
+			sniff_channel_set_error_msg(channel, "setsockopt(SO_RCVBUF) failed: %d", WSAGetLastError());
+			return -1;
+		}
+	}
+
+	channel->buffer_size = buffer_size;
+
+	// TODO(jweyrich): better to use realloc?
 	free(channel->buffer);
-	channel->buffer = malloc(size);
+	channel->buffer = calloc(channel->buffer_size, sizeof(uint8_t));
 	if (channel->buffer == NULL) {
-		sniff_channel_set_error_msg(channel, "Failed to allocate buffer");
+		sniff_channel_set_error_msg(channel, "calloc(): %s", sniff_strerror(errno));
 		return -1;
 	}
-	channel->buffer_size = size;
+
+	LOG_INFO("Using receive buffer size: %zu bytes", channel->buffer_size);
 
 	return 0;
 }
@@ -307,12 +325,6 @@ channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
 
 	if (windows_set_interface(channel, ifname) < 0)
 		goto error;
-
-	// Set buffer size (keep going if it fails)
-	// Ensure we have a minimum buffer size for Windows raw sockets
-	if (buffer_size == 0) {
-		buffer_size = 65536; // 64KB default
-	}
 
 	if (windows_set_buffersize(channel, buffer_size) < 0)
 		goto error;

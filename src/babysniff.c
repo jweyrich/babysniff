@@ -60,8 +60,8 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	// Use a reasonable default buffer size (64KB)
-	const size_t default_buffer_size = 65536;
+	// The default buffer size of 0 lets the platform-specific code choose an appropriate size
+	const size_t default_buffer_size = 0;
 	channel_t *channel = sniff_open(args.interface_name, 0, default_buffer_size);
 	if (channel == NULL)
 		return EXIT_FAILURE;

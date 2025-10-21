@@ -89,22 +89,35 @@ static int bpf_set_nonblock(channel_t *channel, int on) {
 	return 0;
 }
 
-static int bpf_set_buffersize(channel_t *channel, size_t size) {
-	if (size < BPF_MINBUFSIZE || size > BPF_MAXBUFSIZE)
-		size = 0;
-	if (size == 0) {
-		if (ioctl(channel->fd, BIOCGBLEN, &channel->buffer_size) < 0) {
+static int bpf_set_buffersize(channel_t *channel, size_t desired_size) {
+	if (desired_size < BPF_MINBUFSIZE) {
+		LOG_WARN("Requested buffer size is too small. The minimum is %d", BPF_MINBUFSIZE);
+		desired_size = 0;
+	}
+	if (desired_size > BPF_MAXBUFSIZE) {
+		LOG_WARN("Requested buffer size is too large. The maximum is %d", BPF_MAXBUFSIZE);
+		desired_size = 0;
+	}
+
+	unsigned int buffer_size = (unsigned int)desired_size;
+
+	if (buffer_size == 0) {
+		if (ioctl(channel->fd, BIOCGBLEN, (caddr_t)&buffer_size) < 0) {
 			sniff_channel_set_error_msg(channel, "ioctl(BIOCGBLEN): %s", sniff_strerror(errno));
+			// TODO(jweyrich): Ideally we want at least 32KB for performance.
 			channel->buffer_size = SNIFF_DEFAULT_BUFSIZE;
+			// Log a warning but don't fail here
+			LOG_WARN("%s", channel->errmsg);
 		}
 	} else {
-		channel->buffer_size = size;
-		uint test = size;
-		if (ioctl(channel->fd, BIOCSBLEN, (caddr_t)&test) < 0) {
+		if (ioctl(channel->fd, BIOCSBLEN, (caddr_t)&buffer_size) < 0) {
 			sniff_channel_set_error_msg(channel, "ioctl(BIOCSBLEN): %s", sniff_strerror(errno));
 			return -1;
 		}
 	}
+
+	channel->buffer_size = buffer_size;
+
 	// TODO(jweyrich): better to use realloc?
 	free(channel->buffer);
 	channel->buffer = calloc(channel->buffer_size, sizeof(uint8_t));
@@ -112,6 +125,9 @@ static int bpf_set_buffersize(channel_t *channel, size_t size) {
 		sniff_channel_set_error_msg(channel, "calloc(): %s", sniff_strerror(errno));
 		return -1;
 	}
+
+	LOG_INFO("Using receive buffer size: %zu bytes", channel->buffer_size);
+
 	return 0;
 }
 
@@ -142,8 +158,8 @@ channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
 	if (bpf_set_interface(channel, ifname, 0) < 0)
 		goto error;
 
-	// Keep going if it fails
-	bpf_set_buffersize(channel, buffer_size);
+	if (bpf_set_buffersize(channel, buffer_size) < 0)
+		goto error;
 
 	if (bpf_set_immediate(channel, 1) < 0)
 		goto error;

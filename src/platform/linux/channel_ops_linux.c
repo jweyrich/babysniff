@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <features.h>
+#include <limits.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <net/if.h>
@@ -113,21 +114,42 @@ static int linux_set_nonblock(channel_t *channel, int on) {
 	return 0;
 }
 
-static int linux_set_buffersize(channel_t *channel, size_t size) {
-	// TODO(jweyrich): rewrite this
-	if (size == 0) {
-		channel->buffer_size = SNIFF_DEFAULT_BUFSIZE;
-	} else {
-		channel->buffer_size = size;
+static int linux_set_buffersize(channel_t *channel, size_t desired_size) {
+	if (desired_size > INT_MAX) {
+		LOG_WARN("Requested buffer size is too large. The maximum is %d", INT_MAX);
+		desired_size = 0;
 	}
-	// TODO(jweyrich): better use realloc?
+
+	int buffer_size = (int)desired_size;
+	socklen_t buffer_size_len = sizeof(buffer_size);
+
+	if (buffer_size == 0) {
+		if (getsockopt(channel->fd, SOL_SOCKET, SO_RCVBUF, (void *)&buffer_size, &buffer_size_len) == -1) {
+			sniff_channel_set_error_msg(channel, "getsockopt(SO_RCVBUF) failed: %s", sniff_strerror(errno));
+			// TODO(jweyrich): Ideally we want at least 32KB for performance.
+			channel->buffer_size = SNIFF_DEFAULT_BUFSIZE;
+			// Log a warning but don't fail here
+			LOG_WARN("%s", channel->errmsg);
+		}
+	} else {
+		if (setsockopt(channel->fd, SOL_SOCKET, SO_RCVBUF, (void *)&buffer_size, buffer_size_len) == -1) {
+			sniff_channel_set_error_msg(channel, "setsockopt(SO_RCVBUF) failed: %d", sniff_strerror(errno));
+			return -1;
+		}
+	}
+
+	channel->buffer_size = buffer_size;
+
+	// TODO(jweyrich): better to use realloc?
 	free(channel->buffer);
 	channel->buffer = calloc(channel->buffer_size, sizeof(uint8_t));
 	if (channel->buffer == NULL) {
-		snprintf(channel->errmsg, SNIFF_ERR_BUFSIZE, "calloc(): %s",
-			sniff_strerror(errno));
+		sniff_channel_set_error_msg(channel, "calloc(): %s", sniff_strerror(errno));
 		return -1;
 	}
+
+	LOG_INFO("Using receive buffer size: %zu bytes", channel->buffer_size);
+
 	return 0;
 }
 
@@ -152,8 +174,8 @@ channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
 	if (linux_set_interface(channel, ifname, protocol) < 0)
 		goto error;
 
-	// Keep going if it fails
-	linux_set_buffersize(channel, buffer_size);
+	if (linux_set_buffersize(channel, buffer_size) < 0)
+		goto error;
 
 	if (linux_set_immediate(channel, 1) < 0)
 		goto error;
