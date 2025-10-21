@@ -5,8 +5,8 @@
 #include <errno.h>
 #include <linux/filter.h>
 #include <net/if.h>
-#include "../../channel.h"
-#include "../../channel_ops.h"
+#include "channel.h"
+#include "channel_ops.h"
 
 int linux_bpf_attach_filter(channel_t *channel) {
 	const void *program = &channel->bpf_filter->program;

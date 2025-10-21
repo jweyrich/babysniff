@@ -1,16 +1,19 @@
-#include <arpa/inet.h>
-#include <netinet/udp.h>
-#include <stdio.h>
-
+#include "compat/network_compat.h"
 #include "config.h"
 #include "dump.h"
 #include "log.h"
 #include "macros.h"
 #include "proto_ops.h"
+#include "system.h"
 
-#define UDP_HDR_LEN 8
+#include <stdio.h>
+
+#ifndef OS_WINDOWS
+#	include <netinet/udp.h>
+#endif
 
 int sniff_udp_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
+	static const size_t UDP_HDR_LEN = sizeof(struct udphdr);
 	const struct udphdr *header = (struct udphdr *)packet;
 	uint16_t sport = ntohs(header->uh_sport);
 	uint16_t dport = ntohs(header->uh_dport);

@@ -1,10 +1,12 @@
 #include "dnskey.h"
+
+#include "compat/network_compat.h"
 #include "log.h"
 #include "types/buffer.h"
 #include "proto/dns/sections/rdata.h"
 #include "proto/dns/arrays.h"
 #include "reader.h"
-#include <arpa/inet.h> // for ntohs
+
 #include <stdlib.h>
 
 char *read_public_key(buffer_t *from_buffer, int *error, size_t size) {

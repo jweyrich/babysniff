@@ -1,9 +1,11 @@
 #include "header.h"
+
+#include "compat/network_compat.h"
 #include "log.h"
 #include "proto/dns/arrays.h"
 #include "proto/dns/dns.h"
 #include "types/buffer.h"
-#include <arpa/inet.h>
+
 #include <stdlib.h>
 #include <string.h>
 

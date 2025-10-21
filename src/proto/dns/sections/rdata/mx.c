@@ -1,9 +1,10 @@
 #include "mx.h"
+
+#include "compat/network_compat.h"
 #include "log.h"
 #include "types/buffer.h"
 #include "proto/dns/name.h"
 #include "proto/dns/sections/rdata.h"
-#include <netinet/in.h> // for ntohs
 
 int parse_rdata_mx(dns_rdata_t *rdata, buffer_t *buffer) {
 	rdata->mx.preference = buffer_read_uint16(buffer);

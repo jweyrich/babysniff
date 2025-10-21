@@ -1,17 +1,21 @@
 #ifndef _DEFAULT_SOURCE
 #   define _DEFAULT_SOURCE
 #endif
-#include <arpa/inet.h>
-#include <netinet/tcp.h>
-#include <stdio.h>
-#include <string.h>
 
+#include "compat/network_compat.h"
 #include "dump.h"
 #include "log.h"
 #include "macros.h"
 #include "proto_ops.h"
 #include "system.h"
 #include "types/buffer.h"
+
+#include <stdio.h>
+#include <string.h>
+
+#ifndef OS_WINDOWS
+#	include <netinet/tcp.h>
+#endif
 
 static const char *flags_totext(uint8_t value) {
 	static char text[8 * 4]; // # of flags * length with separator
@@ -77,9 +81,8 @@ int sniff_tcp_fromwire(const uint8_t *packet, size_t length, const config_t *con
 
 	if (sport == 53 || dport == 53) {
 		buffer_t buffer = BUFFER_INITIALIZER;
-		size_t dns_len;
 		buffer_set_data(&buffer, (uint8_t *)packet, length);
-		dns_len = buffer_read_uint16(&buffer);
+		uint16_t dns_len = buffer_read_uint16(&buffer);
 		dns_len = ntohs(dns_len);
 		if (!buffer_has_error(&buffer)) {
 			sniff_dns_fromwire(buffer_data_ptr(&buffer), dns_len, config);

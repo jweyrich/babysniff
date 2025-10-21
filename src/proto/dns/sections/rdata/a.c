@@ -1,9 +1,11 @@
 #include "a.h"
+
+#include "compat/network_compat.h"
 #include "log.h"
 #include "types/buffer.h"
 #include "proto/dns/sections/rdata.h"
+#include "macros.h"
 #include "utils.h" // for utils_in_addr_to_str
-#include <arpa/inet.h> // for INET_ADDRSTRLEN
 
 int parse_rdata_a(dns_rdata_t *rdata, buffer_t *buffer) {
 	rdata->a.address[0] = buffer_read_uint32(buffer);
@@ -15,6 +17,7 @@ int parse_rdata_a(dns_rdata_t *rdata, buffer_t *buffer) {
 }
 
 void free_rdata_a(dns_rdata_t *rdata) {
+	UNUSED(rdata);
     // Nothing to do
 }
 

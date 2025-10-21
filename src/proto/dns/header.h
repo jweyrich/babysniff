@@ -1,5 +1,6 @@
 #pragma once
 
+#include "endianess.h"
 #include "proto/dns/types.h"
 #include <stdint.h>
 
@@ -15,7 +16,7 @@ typedef struct buffer buffer_t;
 //
 // Header flags
 //
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct dns_hdr_flags {
 #if BYTE_ORDER == BIG_ENDIAN
 	dns_flag_e		qr:1; // Flag for query (0) or response (1)
@@ -43,7 +44,7 @@ typedef struct dns_hdr_flags {
 	dns_flag_e		qr:1; // Query/Response flag
 #endif
 } dns_hdr_flags_t;
-#pragma pack()
+#pragma pack(pop)
 
 //
 // Header
