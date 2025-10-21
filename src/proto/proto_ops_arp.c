@@ -12,11 +12,6 @@
 
 #include <stdio.h>
 
-#ifndef OS_WINDOWS
-#	include <netinet/ether.h>
-#	include <netinet/if_ether.h>
-#endif
-
 typedef enum {
 	ARP_ARRAY_HRD,
 	ARP_ARRAY_PRO,

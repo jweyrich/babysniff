@@ -7,11 +7,6 @@
 
 #include <stdio.h>
 
-#ifndef OS_WINDOWS
-#	include <net/ethernet.h>
-#	include <netinet/ether.h> // for `ether_ntoa`
-#endif
-
 // TODO(jweyrich): linux uses struct ethhdr
 int sniff_eth_fromwire(const uint8_t *packet, size_t length, const config_t *config) {
 	int result = 0;

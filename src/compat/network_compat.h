@@ -26,10 +26,26 @@ typedef SOCKET socket_fd_t;
 // POSIX systems - include standard networking headers
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <netinet/if_ether.h>
 // POSIX systems provide ntohs, ntohl, htons, htonl in <arpa/inet.h>
 
 typedef int socket_fd_t;
 #define INVALID_FD -1
+
+#ifdef OS_LINUX
+// Compatibility for ETHER_* constants and types on Linux systems
+#	include <netinet/ether.h>
+#endif
+
+#ifdef OS_BSD_BASED
+// Compatibility for ARPOP_* constants on macOS/BSD systems
+#include <net/if_arp.h>
+#define ARPOP_RREQUEST 	ARPOP_REVREQUEST
+#define ARPOP_RREPLY 	ARPOP_REVREPLY
+#define ARPOP_InREQUEST 	ARPOP_INVREQUEST
+#define ARPOP_InREPLY 	ARPOP_INVREPLY
+#define ARPOP_NAK 		10
+#endif // OS_BSD_BASED
 
 #endif // OS_WINDOWS
 
