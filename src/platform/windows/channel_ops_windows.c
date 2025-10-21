@@ -323,10 +323,12 @@ channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
 		goto error;
 	}
 
-	if (windows_set_interface(channel, ifname) < 0)
+	// Set buffer size before binding the interface because some
+	// OSes need to know the buffer size before binding.
+	if (windows_set_buffersize(channel, buffer_size) < 0)
 		goto error;
 
-	if (windows_set_buffersize(channel, buffer_size) < 0)
+	if (windows_set_interface(channel, ifname) < 0)
 		goto error;
 
 	if (windows_set_immediate(channel, 1) < 0)

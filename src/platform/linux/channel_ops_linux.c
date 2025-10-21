@@ -46,7 +46,7 @@ static int linux_set_interface(channel_t *channel, const char *ifname, uint16_t 
 	memset(&ifr, 0, sizeof(struct ifreq));
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	if (ioctl(channel->fd, SIOCGIFINDEX, &ifr) == -1) {
-		snprintf(channel->errmsg, SNIFF_ERR_BUFSIZE, "ioctl(BIOCSETIF): %s",
+		snprintf(channel->errmsg, SNIFF_ERR_BUFSIZE, "ioctl(SIOCGIFINDEX): %s",
 			sniff_strerror(errno));
 		return -1;
 	}
@@ -171,10 +171,12 @@ channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
 	if (linux_ensure_version(channel) < 0)
 		goto error;
 
-	if (linux_set_interface(channel, ifname, protocol) < 0)
+	// Set buffer size before binding the interface because some
+	// OSes need to know the buffer size before binding.
+	if (linux_set_buffersize(channel, buffer_size) < 0)
 		goto error;
 
-	if (linux_set_buffersize(channel, buffer_size) < 0)
+	if (linux_set_interface(channel, ifname, protocol) < 0)
 		goto error;
 
 	if (linux_set_immediate(channel, 1) < 0)

@@ -155,10 +155,12 @@ channel_t *sniff_open(const char *ifname, int promisc, size_t buffer_size) {
 	if (bpf_ensure_version(channel) < 0)
 		goto error;
 
-	if (bpf_set_interface(channel, ifname, 0) < 0)
+	// Set buffer size before binding the interface because some
+	// OSes need to know the buffer size before binding.
+	if (bpf_set_buffersize(channel, buffer_size) < 0)
 		goto error;
 
-	if (bpf_set_buffersize(channel, buffer_size) < 0)
+	if (bpf_set_interface(channel, ifname, 0) < 0)
 		goto error;
 
 	if (bpf_set_immediate(channel, 1) < 0)
