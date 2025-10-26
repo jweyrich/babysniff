@@ -4,6 +4,7 @@
 
 #include "bpf/bpf_builder.h"
 #include "bpf/bpf_filter.h"
+#include "bpf/bpf_vm.h"
 #include "compat/network_compat.h"
 
 #include <stddef.h> // for offsetof
@@ -87,7 +88,8 @@ void bpf_builder_add(bpf_instruction_builder_t *builder, struct bpf_insn insn) {
     }
     builder->instructions[builder->count].type = BPF_INSTR_NORMAL;
     builder->instructions[builder->count].insn = insn;
-    builder->instructions[builder->count].goto_label = NULL;
+    builder->instructions[builder->count].goto_labels.jt_label = NULL;
+    builder->instructions[builder->count].goto_labels.jf_label = NULL;
     builder->count++;
 }
 
@@ -109,21 +111,6 @@ void bpf_builder_add_jump_eq(bpf_instruction_builder_t *builder, uint32_t value,
     bpf_builder_add(builder, (struct bpf_insn)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, value, jt, jf));
 }
 
-// Add a jump instruction that will jump to reject if condition is NOT met
-void bpf_builder_add_jump_eq_to_reject(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt) {
-    if (builder->count == BPF_MAX_INSTR) {
-        fprintf(stderr, "bpf_builder_add_jump_eq_to_reject: Instruction limit reached\n");
-        abort();
-    }
-    // This creates a conditional jump:
-    // - If value matches: jump by jt (usually 0 = continue to next instruction)
-    // - If value does NOT match: jump to reject label
-    builder->instructions[builder->count].type = BPF_INSTR_GOTO;
-    builder->instructions[builder->count].insn = (struct bpf_insn)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, value, jt, 0);
-    builder->instructions[builder->count].goto_label = strdup("reject");
-    builder->count++;
-}
-
 void bpf_builder_add_alu_and(bpf_instruction_builder_t *builder, uint32_t mask) {
     bpf_builder_add(builder, (struct bpf_insn)BPF_STMT(BPF_ALU | BPF_AND | BPF_K, mask));
 }
@@ -134,13 +121,13 @@ void bpf_builder_add_return(bpf_instruction_builder_t *builder, uint32_t value) 
 
 // Add the reject instruction with label
 void bpf_builder_add_reject(bpf_instruction_builder_t *builder) {
-    bpf_builder_add_label(builder, "reject");
+    bpf_builder_add_label(builder, BPF_LABEL_REJECT);
     bpf_builder_add_return(builder, 0);
 }
 
 // Add the accept instruction with label
 void bpf_builder_add_accept(bpf_instruction_builder_t *builder) {
-    bpf_builder_add_label(builder, "accept");
+    bpf_builder_add_label(builder, BPF_LABEL_ACCEPT);
     bpf_builder_add_return(builder, 0xffff);
 }
 
@@ -170,27 +157,18 @@ void bpf_builder_add_label(bpf_instruction_builder_t *builder, const char *label
     builder->count++;
 }
 
-// Add a goto instruction (conditional jump to label)
-void bpf_builder_add_goto(bpf_instruction_builder_t *builder, const char *label_name, uint32_t value, uint8_t jt) {
+// Add a conditional jump instruction with equality check to labels
+void bpf_builder_add_label_jump_eq(bpf_instruction_builder_t *builder, uint32_t value, const char *jt_label_name, const char *jf_label_name) {
     if (builder->count == BPF_MAX_INSTR) {
-        fprintf(stderr, "bpf_builder_add_goto: Instruction limit reached\n");
+        fprintf(stderr, "bpf_builder_add_label_jump_eq: Instruction limit reached\n");
         abort();
     }
     builder->instructions[builder->count].type = BPF_INSTR_GOTO;
-    // Create a jump instruction template - jf will be calculated in finalize()
-    builder->instructions[builder->count].insn = (struct bpf_insn)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, value, jt, 0);
-    builder->instructions[builder->count].goto_label = strdup(label_name);
+    // Create a jump instruction template - both jt and jf will be calculated in bpf_builder_finalize()
+    builder->instructions[builder->count].insn = (struct bpf_insn)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, value, 0, 0);
+    builder->instructions[builder->count].goto_labels.jt_label = jt_label_name ? strdup(jt_label_name) : NULL;
+    builder->instructions[builder->count].goto_labels.jf_label = jf_label_name ? strdup(jf_label_name) : NULL;
     builder->count++;
-}
-
-// Convenience function for jumping to reject
-void bpf_builder_add_goto_reject(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt) {
-    bpf_builder_add_goto(builder, "reject", value, jt);
-}
-
-// Convenience function for jumping to accept
-void bpf_builder_add_goto_accept(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt) {
-    bpf_builder_add_goto(builder, "accept", value, jt);
 }
 
 int bpf_builder_finalize(bpf_instruction_builder_t *builder, bpf_program_t *program) {
@@ -233,36 +211,58 @@ int bpf_builder_finalize(bpf_instruction_builder_t *builder, bpf_program_t *prog
             // Skip labels - they don't generate instructions
             continue;
         } else if (builder->instructions[i].type == BPF_INSTR_GOTO) {
-            // Resolve goto to calculate jump offset
-            const char *target_label = builder->instructions[i].goto_label;
-            int target_index = -1;
+            // Resolve goto to calculate jump offsets for both jt and jf
+            const char *jt_label = builder->instructions[i].goto_labels.jt_label;
+            const char *jf_label = builder->instructions[i].goto_labels.jf_label;
 
-            // Find the target label
-            for (int j = 0; j < label_count; j++) {
-                if (strcmp(labels[j].name, target_label) == 0) {
-                    target_index = labels[j].index;
-                    break;
-                }
-            }
-
-            if (target_index == -1) {
-                fprintf(stderr, "bpf_builder_finalize: Label '%s' not found\n", target_label);
-                free(final_instructions);
-                return -1;
-            }
-
-            // Calculate jump offset
-            int jump_offset = target_index - final_index - 1;
-            if (jump_offset < 0 || jump_offset > 255) {
-                fprintf(stderr, "bpf_builder_finalize: Jump offset %d out of range for label '%s'\n",
-                        jump_offset, target_label);
-                free(final_instructions);
-                return -1;
-            }
-
-            // Copy instruction with calculated jump offset
+            // Copy instruction template
             final_instructions[final_index] = builder->instructions[i].insn;
-            final_instructions[final_index].jf = (uint8_t)jump_offset;
+
+            // Resolve jt label if present
+            if (jt_label) {
+                int jt_target_index = -1;
+                for (int j = 0; j < label_count; j++) {
+                    if (strcmp(labels[j].name, jt_label) == 0) {
+                        jt_target_index = labels[j].index;
+                        break;
+                    }
+                }
+                if (jt_target_index == -1) {
+                    fprintf(stderr, "bpf_builder_finalize: jt label '%s' not found\n", jt_label);
+                    free(final_instructions);
+                    return -1;
+                }
+                int jt_offset = jt_target_index - final_index - 1;
+                if (jt_offset < 0 || jt_offset > 255) {
+                    fprintf(stderr, "bpf_builder_finalize: jt offset %d out of range for label '%s'\n", jt_offset, jt_label);
+                    free(final_instructions);
+                    return -1;
+                }
+                final_instructions[final_index].jt = (uint8_t)jt_offset;
+            }
+
+            // Resolve jf label if present
+            if (jf_label) {
+                int jf_target_index = -1;
+                for (int j = 0; j < label_count; j++) {
+                    if (strcmp(labels[j].name, jf_label) == 0) {
+                        jf_target_index = labels[j].index;
+                        break;
+                    }
+                }
+                if (jf_target_index == -1) {
+                    fprintf(stderr, "bpf_builder_finalize: jf label '%s' not found\n", jf_label);
+                    free(final_instructions);
+                    return -1;
+                }
+                int jf_offset = jf_target_index - final_index - 1;
+                if (jf_offset < 0 || jf_offset > 255) {
+                    fprintf(stderr, "bpf_builder_finalize: jf offset %d out of range for label '%s'\n", jf_offset, jf_label);
+                    free(final_instructions);
+                    return -1;
+                }
+                final_instructions[final_index].jf = (uint8_t)jf_offset;
+            }
         } else {
             // Normal instruction
             final_instructions[final_index] = builder->instructions[i].insn;
@@ -281,7 +281,8 @@ int bpf_builder_finalize(bpf_instruction_builder_t *builder, bpf_program_t *prog
         if (builder->instructions[i].type == BPF_INSTR_LABEL) {
             free(builder->instructions[i].label_name);
         } else if (builder->instructions[i].type == BPF_INSTR_GOTO) {
-            free(builder->instructions[i].goto_label);
+            free(builder->instructions[i].goto_labels.jt_label);
+            free(builder->instructions[i].goto_labels.jf_label);
         }
     }
 
@@ -289,47 +290,101 @@ int bpf_builder_finalize(bpf_instruction_builder_t *builder, bpf_program_t *prog
 }
 
 // Common BPF instruction sequence builders
-void build_ethernet_header_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint16_t ethertype) {
-    bpf_builder_add_load_abs(builder, 2, offsets.ethertype_offset);  // Load EtherType
-    bpf_builder_add_jump_eq_to_reject(builder, ethertype, 0);        // If not matching ethertype, jump to reject
+void build_ethernet_header_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint16_t ethertype, const char *jt_label_name, const char *jf_label_name) {
+    // Load EtherType
+    bpf_builder_add_load_abs(builder, 2, offsets.ethertype_offset);
+    // If it matches ethertype, jump to jt_label_name, otherwise to jf_label_name
+    bpf_builder_add_label_jump_eq(builder, ethertype, jt_label_name, jf_label_name);
 }
 
-void build_ipv4_version_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets) {
-    bpf_builder_add_load_abs(builder, 1, offsets.ip_version_offset); // Load IP version/IHL byte
-    bpf_builder_add_alu_and(builder, 0xF0);                          // Mask to get only version bits (TODO: depends on endianness?)
-    bpf_builder_add_jump_eq_to_reject(builder, 0x40, 0);             // Check for IPv4, jump to reject if not (TODO: depends on endianness?)
+void build_ipv4_version_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, const char *jt_label_name, const char *jf_label_name) {
+    // Load IP version/IHL byte
+    bpf_builder_add_load_abs(builder, 1, offsets.ip_version_offset);
+    // Mask to get only version bits
+    bpf_builder_add_alu_and(builder, 0xF0);
+    // Check for IPv4 and jump accordingly
+    bpf_builder_add_label_jump_eq(builder, 0x40, jt_label_name, jf_label_name);
 }
 
-void build_ipv4_address_match(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint32_t ip_addr) {
-    bpf_builder_add_load_abs(builder, 4, offsets.ip_src_offset);     // Load src IP
-    bpf_builder_add_jump_eq(builder, ip_addr, 2, 0);                 // If src IP matches, jump 2 to accept
-    bpf_builder_add_load_abs(builder, 4, offsets.ip_dst_offset);     // Load dst IP
-    bpf_builder_add_jump_eq(builder, ip_addr, 0, 1);                 // If dst IP matches, accept, else jump 1 to reject
+// TODO(jweyrich): Should we combine ipv4 and ipv6 version checks into one function? Their impl is the same with just different constants
+void build_ipv6_version_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, const char *jt_label_name, const char *jf_label_name) {
+    // Load IP version/IHL byte
+    bpf_builder_add_load_abs(builder, 1, offsets.ip_version_offset);
+    // Mask to get only version bits
+    bpf_builder_add_alu_and(builder, 0xF0);
+    // Check for IPv6 and jump accordingly
+    bpf_builder_add_label_jump_eq(builder, 0x60, jt_label_name, jf_label_name);
 }
 
-void build_protocol_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint8_t protocol) {
-    bpf_builder_add_load_abs(builder, 1, offsets.ip_proto_offset);   // Load IP protocol
-    bpf_builder_add_jump_eq_to_reject(builder, protocol, 0);         // If protocol doesn't match, jump to reject
+void build_ipv4_address_match(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint32_t ip_addr, const char *jt_label_name, const char *jf_label_name) {
+    // Load src IP
+    bpf_builder_add_load_abs(builder, 4, offsets.ip_src_offset);
+    // If src IP matches, jump to jt_label_name, otherwise continue
+    bpf_builder_add_label_jump_eq(builder, ip_addr, jt_label_name, NULL);
+    // Load dst IP
+    bpf_builder_add_load_abs(builder, 4, offsets.ip_dst_offset);
+    // If dst IP matches, jump to jt_label_name, otherwise jump to reject
+    bpf_builder_add_label_jump_eq(builder, ip_addr, jt_label_name, jf_label_name);
 }
 
-void build_port_match_simple(bpf_instruction_builder_t *builder, uint16_t port, int src_offset, int dst_offset) {
-    bpf_builder_add_load_abs(builder, 2, src_offset);                // Load src port
-    bpf_builder_add_jump_eq(builder, port, 2, 0);                    // If src port matches, jump 2 to accept
-    bpf_builder_add_load_abs(builder, 2, dst_offset);                // Load dst port
-    bpf_builder_add_jump_eq(builder, port, 0, 1);                    // If dst port matches, accept, else jump 1 to reject
+void build_ipv6_address_match(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint32_t ip_addr[4], const char *jt_label_name, const char *jf_label_name) {
+    // Load and compare each 32-bit segment of the source IPv6 address
+    for (int i = 0; i < 4; i++) {
+        // Load src IP segment
+        bpf_builder_add_load_abs(builder, 4, offsets.ip_src_offset + i * 4);
+        // If src segment matches, jump accordingly
+        bpf_builder_add_label_jump_eq(builder, ip_addr[i], (i == 3) ? jt_label_name : NULL, "check_dst_ip");
+    }
+
+    // Load and compare each 32-bit segment of the destination IPv6 address
+    bpf_builder_add_label(builder, "check_dst_ip");
+    for (int i = 0; i < 4; i++) {
+        // Load dst IP segment
+        bpf_builder_add_load_abs(builder, 4, offsets.ip_dst_offset + i * 4);
+        // If dst segment matches, jump accordingly
+        bpf_builder_add_label_jump_eq(builder, ip_addr[i], (i == 3) ? jt_label_name : NULL, jf_label_name);
+    }
+}
+
+void build_protocol_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint8_t protocol, const char *jt_label_name, const char *jf_label_name) {
+    // Load IP protocol
+    bpf_builder_add_load_abs(builder, 1, offsets.ip_proto_offset);
+    // If protocol matches, jump to jt_label_name, otherwise to jf_label_name
+    bpf_builder_add_label_jump_eq(builder, protocol, jt_label_name, jf_label_name);
+}
+
+void build_port_match_simple(bpf_instruction_builder_t *builder, uint16_t port, int src_offset, int dst_offset, const char *jt_label_name, const char *jf_label_name) {
+    // Load src port
+    bpf_builder_add_load_abs(builder, 2, src_offset);
+    // If src port matches, jump to accept
+    bpf_builder_add_label_jump_eq(builder, port, jt_label_name, NULL);
+    // Load dst port
+    bpf_builder_add_load_abs(builder, 2, dst_offset);
+    // If dst port matches, jump to accept, otherwise jump to reject
+    bpf_builder_add_label_jump_eq(builder, port, jt_label_name, jf_label_name);
 }
 
 void build_port_match_with_protocols(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint16_t port) {
     // Check for TCP, UDP, or SCTP
-    bpf_builder_add_load_abs(builder, 1, offsets.ip_proto_offset);   // Load IP protocol
-    bpf_builder_add_jump_eq(builder, IPPROTO_TCP, 2, 0);             // If TCP, jump 2
-    bpf_builder_add_jump_eq(builder, IPPROTO_UDP, 1, 0);             // If UDP, jump 1
-    bpf_builder_add_jump_eq_to_reject(builder, IPPROTO_SCTP, 0);     // If not SCTP, jump to reject
+    // If TCP, jump to port check
+    bpf_builder_add_load_abs(builder, 1, offsets.ip_proto_offset);
+    // If TCP, jump to port check
+    bpf_builder_add_label_jump_eq(builder, IPPROTO_TCP, "check_ports", NULL);
+    // If UDP, jump to port check
+    bpf_builder_add_label_jump_eq(builder, IPPROTO_UDP, "check_ports", NULL);
+    // If not SCTP, jump to reject
+    bpf_builder_add_label_jump_eq(builder, IPPROTO_SCTP, NULL, BPF_LABEL_REJECT);
 
-    // For variable IP header length (proper implementation)
-    bpf_builder_add_load_x_msh(builder, offsets.ip_header_offset);   // Load IP header length into X
-    bpf_builder_add_load_ind(builder, 2, offsets.ip_header_offset);  // Load src port using X+offset
-    bpf_builder_add_jump_eq(builder, port, 2, 0);                    // If src port matches, jump 2 to accept
-    bpf_builder_add_load_ind(builder, 2, offsets.ip_header_offset + 2); // Load dst port using X+offset
-    bpf_builder_add_jump_eq(builder, port, 0, 1);                    // If dst port matches, accept, else jump 1 to reject
+    // Port checking section
+    bpf_builder_add_label(builder, "check_ports");
+    // Load IP header length into X
+    bpf_builder_add_load_x_msh(builder, offsets.ip_header_offset);
+    // Load src port using X+offset
+    bpf_builder_add_load_ind(builder, 2, offsets.ip_header_offset);
+    // If src port matches, jump to accept
+    bpf_builder_add_label_jump_eq(builder, port, BPF_LABEL_ACCEPT, NULL);
+    // Load dst port using X+offset
+    bpf_builder_add_load_ind(builder, 2, offsets.ip_header_offset + 2);
+    // If dst port matches, jump to accept, otherwise jump to reject
+    bpf_builder_add_label_jump_eq(builder, port, BPF_LABEL_ACCEPT, BPF_LABEL_REJECT);
 }

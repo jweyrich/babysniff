@@ -25,17 +25,23 @@ typedef enum {
     BPF_INSTR_LABEL    // Label marker (doesn't generate actual instruction)
 } bpf_instruction_type_t;
 
+#define BPF_LABEL_ACCEPT "accept"
+#define BPF_LABEL_REJECT "reject"
+
 // Wrapper for BPF instructions to support goto labels
 typedef struct {
     bpf_instruction_type_t type;
     struct bpf_insn insn;
     union {
-        char *goto_label;    // For GOTO instructions - target label name
-        char *label_name;    // For LABEL instructions - label name
+        struct {
+            char *jt_label; // For GOTO instructions - jt target label name
+            char *jf_label; // For GOTO instructions - jf target label name
+        } goto_labels;
+        char *label_name;   // For LABEL instructions - label name
     };
 } bpf_instruction_wrapper_t;
 
-#define BPF_MAX_INSTR 255   // Max size for a cBPF filter
+#define BPF_MAX_INSTR 255   // Max number of instructions supported by cBPF
 #define BPF_MAX_LABELS 32   // Max number of labels supported (we can customize it)
 
 // BPF instruction builder for cleaner filter generation
@@ -52,7 +58,6 @@ int bpf_builder_finalize(bpf_instruction_builder_t *builder, bpf_program_t *prog
 void bpf_builder_add(bpf_instruction_builder_t *builder, struct bpf_insn insn);
 void bpf_builder_add_load_abs(bpf_instruction_builder_t *builder, int size, int offset);
 void bpf_builder_add_jump_eq(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt, uint8_t jf);
-void bpf_builder_add_jump_eq_to_reject(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt);
 void bpf_builder_add_alu_and(bpf_instruction_builder_t *builder, uint32_t mask);
 void bpf_builder_add_return(bpf_instruction_builder_t *builder, uint32_t value);
 void bpf_builder_add_reject(bpf_instruction_builder_t *builder);
@@ -62,17 +67,16 @@ void bpf_builder_add_load_ind(bpf_instruction_builder_t *builder, int size, int 
 
 // Goto label system functions
 void bpf_builder_add_label(bpf_instruction_builder_t *builder, const char *label_name);
-void bpf_builder_add_goto(bpf_instruction_builder_t *builder, const char *label_name, uint32_t value, uint8_t jt);
-void bpf_builder_add_goto_reject(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt);
-void bpf_builder_add_goto_accept(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt);
+void bpf_builder_add_label_jump_eq(bpf_instruction_builder_t *builder, uint32_t value, const char *jt_label_name, const char *jf_label_name);
 
 // Common BPF instruction sequence builders
-void build_ethernet_header_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint16_t ethertype);
-void build_ipv4_version_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets);
-void build_ipv4_address_match(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint32_t ip_addr);
-void build_ipv6_address_match(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint32_t ip_addr[4]);
-void build_protocol_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint8_t protocol);
-void build_port_match_simple(bpf_instruction_builder_t *builder, uint16_t port, int src_offset, int dst_offset);
+void build_ethernet_header_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint16_t ethertype, const char *jt_label_name, const char *jf_label_name);
+void build_ipv4_version_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, const char *jt_label_name, const char *jf_label_name);
+void build_ipv6_version_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, const char *jt_label_name, const char *jf_label_name);
+void build_ipv4_address_match(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint32_t ip_addr, const char *jt_label_name, const char *jf_label_name);
+void build_ipv6_address_match(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint32_t ip_addr[4], const char *jt_label_name, const char *jf_label_name);
+void build_protocol_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint8_t protocol, const char *jt_label_name, const char *jf_label_name);
+void build_port_match_simple(bpf_instruction_builder_t *builder, uint16_t port, int src_offset, int dst_offset, const char *jt_label_name, const char *jf_label_name);
 void build_port_match_with_protocols(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint16_t port);
 
 // Helper functions

@@ -175,19 +175,21 @@ int bpf_create_host_filter_ex(const char *host, bpf_program_t *program, datalink
 
     if (datalink == DATALINK_ETHERNET) {
         // For Ethernet, check EtherType first
-        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP);
-        // Double-check IP version is 4
-        build_ipv4_version_check(&builder, offsets);
-        build_ipv4_address_match(&builder, offsets, host_ip);
-    } else {
-        // For raw IP, check IPv4 version first
-        build_ipv4_version_check(&builder, offsets);
-        build_ipv4_address_match(&builder, offsets, host_ip);
+        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP, NULL, BPF_LABEL_REJECT);
     }
 
-    // Add accept/reject instructions
-    bpf_builder_add_accept(&builder);     // Accept
-    bpf_builder_add_reject(&builder);     // Reject
+    // Double-check IP version
+    build_ipv4_version_check(&builder, offsets, "check_ipv4_addr", NULL);
+    // build_ipv6_version_check(&builder, offsets, "check_ipv6_addr", BPF_LABEL_REJECT);
+
+    bpf_builder_add_label(&builder, "check_ipv4_addr");
+    build_ipv4_address_match(&builder, offsets, host_ip, BPF_LABEL_ACCEPT, BPF_LABEL_REJECT);
+
+    // bpf_builder_add_label(&builder, "check_ipv6_addr");
+    // build_ipv6_address_match(&builder, offsets, host_ip, BPF_LABEL_ACCEPT, BPF_LABEL_REJECT);
+
+    bpf_builder_add_accept(&builder);
+    bpf_builder_add_reject(&builder);
 
     return bpf_builder_finalize(&builder, program);
 }
@@ -201,22 +203,15 @@ int bpf_create_port_filter_ex(uint16_t port, bpf_program_t *program, datalink_ty
 
     if (datalink == DATALINK_ETHERNET) {
         // For Ethernet, check EtherType first
-        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP);
-        build_port_match_with_protocols(&builder, offsets, port);
-    } else {
-        // For raw IP, check IPv4 version first
-        build_ipv4_version_check(&builder, offsets);
-        // Simplified version for raw IP - assumes 20-byte IP header
-        bpf_builder_add_load_abs(&builder, 1, offsets.ip_proto_offset);       // Load IP protocol
-        bpf_builder_add_jump_eq(&builder, IPPROTO_TCP, 2, 0);                 // If TCP, jump 2 to port check
-        bpf_builder_add_jump_eq(&builder, IPPROTO_UDP, 1, 0);                 // If UDP, jump 1 to port check
-        bpf_builder_add_jump_eq_to_reject(&builder, IPPROTO_SCTP, 0);          // If not SCTP, jump to reject
-        build_port_match_simple(&builder, port, 20, 22);                      // Assume 20-byte IP header
+        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP, NULL, BPF_LABEL_REJECT);
     }
 
-    // Add accept/reject instructions
-    bpf_builder_add_accept(&builder);     // Accept
-    bpf_builder_add_reject(&builder);     // Reject
+    // For raw IP, check IPv4 version first
+    build_ipv4_version_check(&builder, offsets, NULL, BPF_LABEL_REJECT);
+    build_port_match_with_protocols(&builder, offsets, port);
+
+    bpf_builder_add_accept(&builder);
+    bpf_builder_add_reject(&builder);
 
     return bpf_builder_finalize(&builder, program);
 }
@@ -240,35 +235,35 @@ int bpf_create_protocol_filter_ex(const char *proto_name, bpf_program_t *program
                 return -1; // ARP requires Ethernet header
             }
             bpf_builder_init(&builder);
-            build_ethernet_header_check(&builder, offsets, ETHERTYPE_ARP);
-            bpf_builder_add_accept(&builder);     // Accept
-            bpf_builder_add_reject(&builder);     // Reject
+            build_ethernet_header_check(&builder, offsets, ETHERTYPE_ARP, NULL, BPF_LABEL_REJECT);
+            bpf_builder_add_accept(&builder);
+            bpf_builder_add_reject(&builder);
             return bpf_builder_finalize(&builder, program);
         }
 
         if (strcasecmp(proto_name, "ip") == 0) {
             bpf_builder_init(&builder);
             if (datalink == DATALINK_ETHERNET) {
-                build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP);
-            } else {
-                build_ipv4_version_check(&builder, offsets);
+                // For Ethernet, check EtherType first
+                build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP, NULL, BPF_LABEL_REJECT);
             }
-            bpf_builder_add_accept(&builder);     // Accept
-            bpf_builder_add_reject(&builder);     // Reject
+            build_ipv4_version_check(&builder, offsets, NULL, BPF_LABEL_REJECT);
+            bpf_builder_add_accept(&builder);
+            bpf_builder_add_reject(&builder);
             return bpf_builder_finalize(&builder, program);
         }
 
         // Handle IP layer protocols (TCP, UDP, ICMP, SCTP)
         bpf_builder_init(&builder);
         if (datalink == DATALINK_ETHERNET) {
-            build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP);
-            build_protocol_check(&builder, offsets, proto_info->ip_protocol);
-        } else {
-            build_ipv4_version_check(&builder, offsets);
-            build_protocol_check(&builder, offsets, proto_info->ip_protocol);
+            // For Ethernet, check EtherType first
+            build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP, NULL, BPF_LABEL_REJECT);
         }
-        bpf_builder_add_accept(&builder);     // Accept
-        bpf_builder_add_reject(&builder);     // Reject
+        build_ipv4_version_check(&builder, offsets, NULL, BPF_LABEL_REJECT);
+        build_protocol_check(&builder, offsets, proto_info->ip_protocol, BPF_LABEL_ACCEPT, BPF_LABEL_REJECT);
+
+        bpf_builder_add_accept(&builder);
+        bpf_builder_add_reject(&builder);
         return bpf_builder_finalize(&builder, program);
     }
 
@@ -283,15 +278,14 @@ int bpf_create_protocol_filter_ex(const char *proto_name, bpf_program_t *program
     bpf_builder_init(&builder);
 
     if (datalink == DATALINK_ETHERNET) {
-        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP);
-        build_protocol_check(&builder, offsets, proto_num);
-    } else {
-        build_ipv4_version_check(&builder, offsets);
-        build_protocol_check(&builder, offsets, proto_num);
+        // For Ethernet, check EtherType first
+        build_ethernet_header_check(&builder, offsets, ETHERTYPE_IP, NULL, BPF_LABEL_REJECT);
     }
+    build_ipv4_version_check(&builder, offsets, NULL, BPF_LABEL_REJECT);
+    build_protocol_check(&builder, offsets, proto_num, BPF_LABEL_ACCEPT, BPF_LABEL_REJECT);
 
-    bpf_builder_add_accept(&builder);     // Accept
-    bpf_builder_add_reject(&builder);     // Reject
+    bpf_builder_add_accept(&builder);
+    bpf_builder_add_reject(&builder);
     return bpf_builder_finalize(&builder, program);
 }
 
