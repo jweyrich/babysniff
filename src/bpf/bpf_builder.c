@@ -77,16 +77,18 @@ bpf_offsets_t get_bpf_offsets(datalink_type_t datalink) {
 
 void bpf_builder_init(bpf_instruction_builder_t *builder) {
     builder->count = 0;
-    builder->reject_placeholders_head = NULL;
-    builder->reject_instruction_index = UINT8_MAX; // Invalid index initially
+    memset(builder->instructions, 0, sizeof(builder->instructions));
 }
 
 void bpf_builder_add(bpf_instruction_builder_t *builder, struct bpf_insn insn) {
-    if (builder->count == 255) {
+    if (builder->count == BPF_MAX_INSTR) {
         fprintf(stderr, "bpf_builder_add: Instruction limit reached\n");
         abort();
     }
-    builder->instructions[builder->count++] = insn;
+    builder->instructions[builder->count].type = BPF_INSTR_NORMAL;
+    builder->instructions[builder->count].insn = insn;
+    builder->instructions[builder->count].goto_label = NULL;
+    builder->count++;
 }
 
 void bpf_builder_add_load_abs(bpf_instruction_builder_t *builder, int size, int offset) {
@@ -107,17 +109,19 @@ void bpf_builder_add_jump_eq(bpf_instruction_builder_t *builder, uint32_t value,
     bpf_builder_add(builder, (struct bpf_insn)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, value, jt, jf));
 }
 
-// Add a jump instruction that will be fixed up to jump to reject instruction
+// Add a jump instruction that will jump to reject if condition is NOT met
 void bpf_builder_add_jump_eq_to_reject(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt) {
-    // Allocate new node for the linked list
-    bpf_reject_placeholder_node_t *node = malloc(sizeof(bpf_reject_placeholder_node_t));
-    if (node) {
-        node->instruction_index = builder->count;
-        node->next = builder->reject_placeholders_head;
-        builder->reject_placeholders_head = node;
+    if (builder->count == BPF_MAX_INSTR) {
+        fprintf(stderr, "bpf_builder_add_jump_eq_to_reject: Instruction limit reached\n");
+        abort();
     }
-    // Add instruction with placeholder jf offset (will be fixed up later)
-    bpf_builder_add(builder, (struct bpf_insn)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, value, jt, 255));
+    // This creates a conditional jump:
+    // - If value matches: jump by jt (usually 0 = continue to next instruction)
+    // - If value does NOT match: jump to reject label
+    builder->instructions[builder->count].type = BPF_INSTR_GOTO;
+    builder->instructions[builder->count].insn = (struct bpf_insn)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, value, jt, 0);
+    builder->instructions[builder->count].goto_label = strdup("reject");
+    builder->count++;
 }
 
 void bpf_builder_add_alu_and(bpf_instruction_builder_t *builder, uint32_t mask) {
@@ -128,14 +132,15 @@ void bpf_builder_add_return(bpf_instruction_builder_t *builder, uint32_t value) 
     bpf_builder_add(builder, (struct bpf_insn)BPF_STMT(BPF_RET | BPF_K, value));
 }
 
-// Add the reject instruction and mark its position for offset fixup
+// Add the reject instruction with label
 void bpf_builder_add_reject(bpf_instruction_builder_t *builder) {
-    builder->reject_instruction_index = builder->count;
+    bpf_builder_add_label(builder, "reject");
     bpf_builder_add_return(builder, 0);
 }
 
-// Add the accept instruction
+// Add the accept instruction with label
 void bpf_builder_add_accept(bpf_instruction_builder_t *builder) {
+    bpf_builder_add_label(builder, "accept");
     bpf_builder_add_return(builder, 0xffff);
 }
 
@@ -153,37 +158,132 @@ void bpf_builder_add_load_ind(bpf_instruction_builder_t *builder, int size, int 
     bpf_builder_add(builder, (struct bpf_insn)BPF_STMT(code, offset));
 }
 
-// Helper function to clean up the reject placeholders linked list
-static void bpf_builder_cleanup(bpf_instruction_builder_t *builder) {
-    bpf_reject_placeholder_node_t *current = builder->reject_placeholders_head;
-    while (current) {
-        bpf_reject_placeholder_node_t *next = current->next;
-        free(current);
-        current = next;
+// Add a label marker (doesn't generate actual instruction)
+void bpf_builder_add_label(bpf_instruction_builder_t *builder, const char *label_name) {
+    if (builder->count == BPF_MAX_INSTR) {
+        fprintf(stderr, "bpf_builder_add_label: Instruction limit reached\n");
+        abort();
     }
-    builder->reject_placeholders_head = NULL;
+    builder->instructions[builder->count].type = BPF_INSTR_LABEL;
+    builder->instructions[builder->count].insn = (struct bpf_insn){0}; // Unused for labels
+    builder->instructions[builder->count].label_name = strdup(label_name);
+    builder->count++;
+}
+
+// Add a goto instruction (conditional jump to label)
+void bpf_builder_add_goto(bpf_instruction_builder_t *builder, const char *label_name, uint32_t value, uint8_t jt) {
+    if (builder->count == BPF_MAX_INSTR) {
+        fprintf(stderr, "bpf_builder_add_goto: Instruction limit reached\n");
+        abort();
+    }
+    builder->instructions[builder->count].type = BPF_INSTR_GOTO;
+    // Create a jump instruction template - jf will be calculated in finalize()
+    builder->instructions[builder->count].insn = (struct bpf_insn)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, value, jt, 0);
+    builder->instructions[builder->count].goto_label = strdup(label_name);
+    builder->count++;
+}
+
+// Convenience function for jumping to reject
+void bpf_builder_add_goto_reject(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt) {
+    bpf_builder_add_goto(builder, "reject", value, jt);
+}
+
+// Convenience function for jumping to accept
+void bpf_builder_add_goto_accept(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt) {
+    bpf_builder_add_goto(builder, "accept", value, jt);
 }
 
 int bpf_builder_finalize(bpf_instruction_builder_t *builder, bpf_program_t *program) {
-    // Fix up reject offset placeholders
-    if (builder->reject_instruction_index != UINT8_MAX) {
-        bpf_reject_placeholder_node_t *current = builder->reject_placeholders_head;
-        while (current) {
-            uint8_t insn_index = current->instruction_index;
-            if (insn_index < builder->count) {
-                struct bpf_insn *insn = &builder->instructions[insn_index];
-                // Calculate the jump offset to the reject instruction
-                uint8_t reject_offset = (uint8_t)(builder->reject_instruction_index - insn_index - 1);
-                insn->jf = reject_offset;
+    // Step 1: Build label-to-index mapping
+    typedef struct {
+        char *name;
+        int index;
+    } label_map_t;
+
+    label_map_t labels[BPF_MAX_LABELS];
+    int label_count = 0;
+
+    // Find all labels and their positions in the final instruction array
+    int final_instruction_count = 0;
+    for (int i = 0; i < builder->count; i++) {
+        if (builder->instructions[i].type == BPF_INSTR_LABEL) {
+            if (label_count >= BPF_MAX_LABELS) {
+                fprintf(stderr, "bpf_builder_finalize: Too many labels (max %d)\n", BPF_MAX_LABELS);
+                return -1;
             }
-            current = current->next;
+            labels[label_count].name = builder->instructions[i].label_name;
+            labels[label_count].index = final_instruction_count;
+            label_count++;
+            // Labels don't generate actual instructions, so don't increment final_instruction_count
+        } else {
+            final_instruction_count++;
         }
     }
 
-    int result = bpf_set_instructions(program, builder->instructions, builder->count * sizeof(struct bpf_insn));
+    // Step 2: Create final instruction array
+    struct bpf_insn *final_instructions = malloc(final_instruction_count * sizeof(struct bpf_insn));
+    if (!final_instructions) {
+        return -1;
+    }
 
-    // Clean up the linked list
-    bpf_builder_cleanup(builder);
+    // Step 3: Convert wrappers to final instructions, resolving gotos
+    int final_index = 0;
+    for (int i = 0; i < builder->count; i++) {
+        if (builder->instructions[i].type == BPF_INSTR_LABEL) {
+            // Skip labels - they don't generate instructions
+            continue;
+        } else if (builder->instructions[i].type == BPF_INSTR_GOTO) {
+            // Resolve goto to calculate jump offset
+            const char *target_label = builder->instructions[i].goto_label;
+            int target_index = -1;
+
+            // Find the target label
+            for (int j = 0; j < label_count; j++) {
+                if (strcmp(labels[j].name, target_label) == 0) {
+                    target_index = labels[j].index;
+                    break;
+                }
+            }
+
+            if (target_index == -1) {
+                fprintf(stderr, "bpf_builder_finalize: Label '%s' not found\n", target_label);
+                free(final_instructions);
+                return -1;
+            }
+
+            // Calculate jump offset
+            int jump_offset = target_index - final_index - 1;
+            if (jump_offset < 0 || jump_offset > 255) {
+                fprintf(stderr, "bpf_builder_finalize: Jump offset %d out of range for label '%s'\n",
+                        jump_offset, target_label);
+                free(final_instructions);
+                return -1;
+            }
+
+            // Copy instruction with calculated jump offset
+            final_instructions[final_index] = builder->instructions[i].insn;
+            final_instructions[final_index].jf = (uint8_t)jump_offset;
+        } else {
+            // Normal instruction
+            final_instructions[final_index] = builder->instructions[i].insn;
+        }
+        final_index++;
+    }
+
+    // Step 4: Pass the converted array to bpf_set_instructions
+    int result = bpf_set_instructions(program, final_instructions, final_index * sizeof(struct bpf_insn));
+
+    // Clean up
+    free(final_instructions);
+
+    // Free allocated label/goto strings
+    for (int i = 0; i < builder->count; i++) {
+        if (builder->instructions[i].type == BPF_INSTR_LABEL) {
+            free(builder->instructions[i].label_name);
+        } else if (builder->instructions[i].type == BPF_INSTR_GOTO) {
+            free(builder->instructions[i].goto_label);
+        }
+    }
 
     return result;
 }

@@ -18,18 +18,30 @@ typedef struct {
     int udp_dport_offset;     // Offset to UDP destination port
 } bpf_offsets_t;
 
-// Linked list node for tracking reject placeholder instructions
-typedef struct reject_placeholder_node {
-    uint8_t instruction_index;
-    struct reject_placeholder_node *next;
-} bpf_reject_placeholder_node_t;
+// BPF instruction types for the goto label system
+typedef enum {
+    BPF_INSTR_NORMAL,  // Regular BPF instruction
+    BPF_INSTR_GOTO,    // Goto instruction (jump to label)
+    BPF_INSTR_LABEL    // Label marker (doesn't generate actual instruction)
+} bpf_instruction_type_t;
+
+// Wrapper for BPF instructions to support goto labels
+typedef struct {
+    bpf_instruction_type_t type;
+    struct bpf_insn insn;
+    union {
+        char *goto_label;    // For GOTO instructions - target label name
+        char *label_name;    // For LABEL instructions - label name
+    };
+} bpf_instruction_wrapper_t;
+
+#define BPF_MAX_INSTR 255   // Max size for a cBPF filter
+#define BPF_MAX_LABELS 32   // Max number of labels supported (we can customize it)
 
 // BPF instruction builder for cleaner filter generation
 typedef struct {
-    struct bpf_insn instructions[255]; // Max size for a cBPF filter
+    bpf_instruction_wrapper_t instructions[BPF_MAX_INSTR];
     uint8_t count;
-    bpf_reject_placeholder_node_t *reject_placeholders_head; // Linked list of instructions that need reject offset fixup
-    uint8_t reject_instruction_index; // Index where reject instruction will be placed
 } bpf_instruction_builder_t;
 
 // Builder initialization and finalization
@@ -47,6 +59,12 @@ void bpf_builder_add_reject(bpf_instruction_builder_t *builder);
 void bpf_builder_add_accept(bpf_instruction_builder_t *builder);
 void bpf_builder_add_load_x_msh(bpf_instruction_builder_t *builder, int offset);
 void bpf_builder_add_load_ind(bpf_instruction_builder_t *builder, int size, int offset);
+
+// Goto label system functions
+void bpf_builder_add_label(bpf_instruction_builder_t *builder, const char *label_name);
+void bpf_builder_add_goto(bpf_instruction_builder_t *builder, const char *label_name, uint32_t value, uint8_t jt);
+void bpf_builder_add_goto_reject(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt);
+void bpf_builder_add_goto_accept(bpf_instruction_builder_t *builder, uint32_t value, uint8_t jt);
 
 // Common BPF instruction sequence builders
 void build_ethernet_header_check(bpf_instruction_builder_t *builder, bpf_offsets_t offsets, uint16_t ethertype);
