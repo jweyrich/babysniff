@@ -1,10 +1,13 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdbool.h>
 
 struct ether_addr; // Forward declaration
 struct in_addr; // Forward declaration
 struct in6_addr; // Forward declaration
+
+bool utils_try_parse_long(const char *in_value, long *out_value, int base);
 
 // Convert a `struct ether_addr` structure to a string representation.
 char *utils_ether_addr_to_str(char *output, size_t output_size, const struct ether_addr *input);

@@ -3,6 +3,7 @@
 #include "compat/network_compat.h"
 #include "system.h"
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h> // for strlen
@@ -11,6 +12,17 @@
 #	include <netinet/if_ether.h> // for struct ether_addr
 #	include <net/ethernet.h> // for ETHER_ADDR_LEN
 #endif
+
+bool utils_try_parse_long(const char *in_value, long *out_value, int base) {
+    char *endptr;
+    errno = 0;
+    long val = strtol(in_value, &endptr, base);
+    if (errno == ERANGE || *endptr != '\0') {
+        return false;
+    }
+    *out_value = val;
+    return true;
+}
 
 char *utils_ether_addr_to_str(char *output, size_t output_size, const struct ether_addr *input) {
 	if (output_size < ETHER_ADDR_LEN * 3) { // Minimum size is 18 bytes including the null terminator

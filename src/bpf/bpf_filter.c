@@ -9,6 +9,7 @@
 #include "compat/network_compat.h"
 #include "compat/string_compat.h"
 #include "system.h"
+#include "utils.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -375,9 +376,9 @@ int bpf_compile_filter_ex(const char *filter_string, bpf_program_t *program, dat
         if (strcasecmp(token_list.tokens[0], "host") == 0) {
             result = bpf_create_host_filter_ex(token_list.tokens[1], program, datalink);
         } else if (strcasecmp(token_list.tokens[0], "port") == 0) {
-            char *endptr;
-            long port = strtol(token_list.tokens[1], &endptr, 10);
-            if (*endptr == '\0' && port >= 0 && port <= 65535) {
+            long port;
+            bool is_number = utils_try_parse_long(token_list.tokens[1], &port, 10);
+            if (is_number && port >= 0 && port <= 65535) {
                 result = bpf_create_port_filter_ex((uint16_t)port, program, datalink);
             }
         }
