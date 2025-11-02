@@ -85,7 +85,7 @@ static datalink_type_t detect_datalink_type(const uint8_t *packet, size_t len) {
 }
 
 // Helper function to resolve hostname to IP address
-static int resolve_hostname(const char *hostname, struct in_addr *addr) {
+static int resolve_hostname4(const char *hostname, struct in_addr *addr) {
     const int family = AF_INET; // IPv4 only because we don't yet support IPv6
 
     // Try to parse as IPv4 address first using inet_pton (cross-platform)
@@ -162,7 +162,7 @@ static const protocol_info_t* find_protocol_info(const char *proto_name) {
 // Create a simple host filter (matches src or dst IP)
 int bpf_create_host_filter_ex(const char *host, bpf_program_t *program, datalink_type_t datalink) {
     struct in_addr addr;
-    if (resolve_hostname(host, &addr) < 0) {
+    if (resolve_hostname4(host, &addr) < 0) {
         return -1;
     }
 
