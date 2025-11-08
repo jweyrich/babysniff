@@ -5,6 +5,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <stdlib.h> // for strtol
 #include <stdio.h>
 #include <string.h> // for strlen
 
