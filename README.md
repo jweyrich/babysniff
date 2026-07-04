@@ -96,13 +96,11 @@ babysniff [OPTIONS] [expression]
 
 ## Limitations
 
-Due to Microsoft's security restrictions in Windows XP SP2 and later, we cannot capture the Ethernet (data link layer) part of packets on Windows using raw sockets.
+On Windows, babysniff uses raw sockets (SOCK_RAW with SIO_RCVALL), which are limited by Microsoft's security restrictions introduced in Windows XP SP2. As a result, packet capture starts at the IP header (Network Layer, Layer 3), so Ethernet (Data Link Layer, Layer 2) headers are not available.
 
-**Windows raw sockets are limited**: They operate at the Network Layer (Layer 3) with `SOCK_RAW` and `SIO_RCVALL`, capturing packets starting from the IP header, not the Data Link Layer (Layer 2) where Ethernet headers reside.
+This means babysniff can capture and analyze IP-based protocols such as TCP, UDP, ICMP, and DNS, but it cannot inspect Ethernet-specific information such as MAC addresses, EtherType values, or VLAN tags.
 
-**Impact**: On Windows, babysniff can capture and analyze IP, TCP, UDP, ICMP, and DNS protocols correctly, but Ethernet-level information (MAC addresses, VLAN tags, etc) is not available.
-
-**Alternative**: Full Ethernet capture could be achieved by providing a kernel driver like WinPcap/Npcap have, but this is beyond the current scope of this zero-dependency project.
+Supporting full Ethernet frame capture would require a kernel-mode packet capture driver, such as WinPcap or Npcap. This project intentionally avoids external dependencies, so such support is outside its scope.
 
 ## Screenshots
 
